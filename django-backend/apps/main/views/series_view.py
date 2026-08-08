@@ -51,7 +51,10 @@ class EpisodeViewSet(viewsets.ModelViewSet):
                 {"error": "Bu video hali tayyor emas (file_id yo'q)"},
                 status=status.HTTP_404_NOT_FOUND
             )
-        url = f"{settings.GO_STREAMER_BASE_URL}/stream/{file_id}"
+        url = (
+        f"{settings.GO_STREAMER_BASE_URL}/stream"
+        f"?channel={episode.telegram_channel}&message_id={episode.telegram_message_id}"
+    )
         return HttpResponseRedirect(url)
 
 class Rating_SeriesViewSet(viewsets.ModelViewSet):

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"net/http"
@@ -46,12 +45,29 @@ var (
 	appHash string
 	port    string
 	botPool BotPool
+
+	channelCache  = map[string]*channelInfo{}
+	channelCacheM sync.RWMutex
+
+	docCache  = map[string]*docInfo{}
+	docCacheM sync.RWMutex
 )
+
+type channelInfo struct {
+	ID         int64
+	AccessHash int64
+}
+
+type docInfo struct {
+	Doc      *tg.Document
+	CachedAt time.Time
+}
+
+const docCacheTTL = 20 * time.Minute // file_reference vaqti-vaqti bilan eskiradi, shuning uchun uzoq saqlamaymiz
 
 func main() {
 	log.Println("[INIT] 🚀 MTProto Streamer ishga tushmoqda...")
 
-	// 1. .env faylini avtomatik yuklash
 	loadDotEnv(".env")
 
 	var err error
@@ -69,7 +85,6 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// 2. MTProto Bot Pool-ni parallel ishga tushirish
 	var wg sync.WaitGroup
 	log.Printf("[INIT] %d ta bot MTProto tarmog'iga ulanmoqda...", len(tokens))
 
@@ -120,7 +135,6 @@ func main() {
 		}(i+1, t)
 	}
 
-	// Botlar autentifikatsiyasini kutish (15 soniya timeout)
 	waitTimeout(&wg, 15*time.Second)
 
 	botPool.mu.RLock()
@@ -133,7 +147,6 @@ func main() {
 
 	log.Printf("[READY] 🚀 Streamer tayyor! Faol Botlar: %d ta | Port: :%s", activeBotsCount, port)
 
-	// 3. HTTP Server
 	mux := http.NewServeMux()
 	mux.HandleFunc("/stream", handleStream)
 	mux.HandleFunc("/health", handleHealth)
@@ -161,7 +174,6 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleStream(w http.ResponseWriter, r *http.Request) {
-	// CORS Header'lar (Veb pleyerlar va mobil ilovalar uchun)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Range, Content-Type")
@@ -172,30 +184,38 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// URL Parametrlari: /stream?id=123456&access_hash=7891011&size=104857600&file_reference=a1b2...
-	fileIDStr := r.URL.Query().Get("id")
-	accessHashStr := r.URL.Query().Get("access_hash")
-	fileSizeStr := r.URL.Query().Get("size")
-	fileRefHex := r.URL.Query().Get("file_reference")
+	// URL Parametrlari: /stream?channel=videos_for_llm2&message_id=11
+	channelName := r.URL.Query().Get("channel")
+	messageIDStr := r.URL.Query().Get("message_id")
 
-	if fileIDStr == "" || accessHashStr == "" || fileSizeStr == "" {
-		http.Error(w, "id, access_hash va size parametrlar shart", http.StatusBadRequest)
+	if channelName == "" || messageIDStr == "" {
+		http.Error(w, "channel va message_id parametrlar shart", http.StatusBadRequest)
 		return
 	}
 
-	fileID, err1 := strconv.ParseInt(fileIDStr, 10, 64)
-	accessHash, err2 := strconv.ParseInt(accessHashStr, 10, 64)
-	fileSize, err3 := strconv.ParseInt(fileSizeStr, 10, 64)
-
-	if err1 != nil || err2 != nil || err3 != nil || fileSize <= 0 {
-		http.Error(w, "Parametrlar formati noto'g'ri", http.StatusBadRequest)
+	messageID, err := strconv.Atoi(messageIDStr)
+	if err != nil {
+		http.Error(w, "message_id noto'g'ri", http.StatusBadRequest)
 		return
 	}
 
-	var fileRef []byte
-	if fileRefHex != "" {
-		fileRef, _ = hex.DecodeString(fileRefHex)
+	worker, err := botPool.GetWorker()
+	if err != nil {
+		http.Error(w, "Botlar band", http.StatusServiceUnavailable)
+		return
 	}
+
+	doc, err := getDocument(r.Context(), worker.API, channelName, messageID)
+	if err != nil {
+		log.Printf("[ERROR] [Bot #%d] Video topilmadi (channel=%s, message_id=%d): %v", worker.ID, channelName, messageID, err)
+		http.Error(w, "Video topilmadi", http.StatusNotFound)
+		return
+	}
+
+	fileID := doc.ID
+	accessHash := doc.AccessHash
+	fileRef := doc.FileReference
+	fileSize := doc.Size
 
 	// HTTP Range Parser (Pleyer o'tkazgan (seek qilgan) bayt intervali)
 	rangeHeader := r.Header.Get("Range")
@@ -229,17 +249,14 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 	contentLength := (endByte - startByte) + 1
 
 	// Telegram MTProto Standard Alignment:
-	// 1. Offset har doim 128 KB (131072) ga karrali bo'lishi shart
 	const alignBlock = 128 * 1024
 	alignOffset := (startByte / alignBlock) * alignBlock
 	diff := startByte - alignOffset
 
-	// 2. Request Limit har doim 4 KB (4096) ga karrali bo'lishi shart
 	const limitBlock = 4 * 1024
 	rawLimit := int(contentLength + diff)
 	limit := ((rawLimit + limitBlock - 1) / limitBlock) * limitBlock
 
-	// 3. Telegram maksimal cheklovi (1 MB)
 	if limit > 1024*1024 {
 		limit = 1024 * 1024
 	}
@@ -250,38 +267,40 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 		FileReference: fileRef,
 	}
 
-	worker, err := botPool.GetWorker()
-	if err != nil {
-		http.Error(w, "Botlar band", http.StatusServiceUnavailable)
-		return
-	}
-
 	req := &tg.UploadGetFileRequest{
 		Location: location,
 		Offset:   alignOffset,
 		Limit:    limit,
 	}
 
-	// Telegram MTProto request
 	res, err := worker.API.UploadGetFile(r.Context(), req)
 	if err != nil {
-		log.Printf("[ERROR] [Bot #%d] MTProto UploadGetFile error: %v", worker.ID, err)
-		http.Error(w, "Telegram'dan yuklab bo'lmadi", http.StatusBadGateway)
-		return
+		// file_reference eskirgan bo'lishi mumkin — bir marta yangilab qayta urinamiz
+		if strings.Contains(err.Error(), "FILE_REFERENCE_EXPIRED") {
+			invalidateDocument(channelName, messageID)
+			doc2, err2 := getDocument(r.Context(), worker.API, channelName, messageID)
+			if err2 == nil {
+				location.FileReference = doc2.FileReference
+				res, err = worker.API.UploadGetFile(r.Context(), req)
+			}
+		}
+		if err != nil {
+			log.Printf("[ERROR] [Bot #%d] MTProto UploadGetFile error: %v", worker.ID, err)
+			http.Error(w, "Telegram'dan yuklab bo'lmadi", http.StatusBadGateway)
+			return
+		}
 	}
 
 	switch chunk := res.(type) {
 	case *tg.UploadFile:
 		bytesToWrite := chunk.Bytes
 
-		// Telegram alignment sababli ortiqcha boshlang'ich baytlarni qirqish
 		if diff < int64(len(bytesToWrite)) {
 			bytesToWrite = bytesToWrite[diff:]
 		} else {
 			bytesToWrite = []byte{}
 		}
 
-		// Kutilgandan ortiqcha baytlar bo'lsa qirqish
 		if int64(len(bytesToWrite)) > contentLength {
 			bytesToWrite = bytesToWrite[:contentLength]
 		}
@@ -289,14 +308,12 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 		actualLen := int64(len(bytesToWrite))
 		actualEndByte := startByte + actualLen - 1
 
-		// Header'larni belgilash va faqat muvaffaqiyatli yuklangach status yuborish
 		w.Header().Set("Content-Type", "video/mp4")
 		w.Header().Set("Accept-Ranges", "bytes")
 		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", startByte, actualEndByte, fileSize))
 		w.Header().Set("Content-Length", strconv.FormatInt(actualLen, 10))
 		w.WriteHeader(http.StatusPartialContent)
 
-		// Direct Stream: RAM-dan darhol ResponseWriter-ga (0 MB Disk)
 		w.Write(bytesToWrite)
 
 	default:
@@ -305,12 +322,104 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ================= MTProto RESOLVE FUNKSIYALARI =================
+
+// resolveChannel — kanal username'ini access_hash'ga aylantiradi, natijani keshlaydi
+// (kanal access_hash deyarli hech qachon o'zgarmaydi, shuning uchun uzoq saqlanadi).
+func resolveChannel(ctx context.Context, api *tg.Client, username string) (*channelInfo, error) {
+	channelCacheM.RLock()
+	if ci, ok := channelCache[username]; ok {
+		channelCacheM.RUnlock()
+		return ci, nil
+	}
+	channelCacheM.RUnlock()
+
+	resolved, err := api.ContactsResolveUsername(ctx, &tg.ContactsResolveUsernameRequest{
+		Username: username,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("contacts.resolveUsername: %w", err)
+	}
+
+	for _, c := range resolved.Chats {
+		if ch, ok := c.(*tg.Channel); ok {
+			ci := &channelInfo{ID: ch.ID, AccessHash: ch.AccessHash}
+			channelCacheM.Lock()
+			channelCache[username] = ci
+			channelCacheM.Unlock()
+			return ci, nil
+		}
+	}
+
+	return nil, fmt.Errorf("kanal topilmadi: %s", username)
+}
+
+// getDocument — channel+message_id orqali videoning Document ma'lumotini oladi,
+// qisqa muddat (docCacheTTL) keshlaydi, chunki file_reference vaqti-vaqti bilan eskiradi.
+func getDocument(ctx context.Context, api *tg.Client, channelName string, messageID int) (*tg.Document, error) {
+	cacheKey := fmt.Sprintf("%s:%d", channelName, messageID)
+
+	docCacheM.RLock()
+	if di, ok := docCache[cacheKey]; ok && time.Since(di.CachedAt) < docCacheTTL {
+		docCacheM.RUnlock()
+		return di.Doc, nil
+	}
+	docCacheM.RUnlock()
+
+	ci, err := resolveChannel(ctx, api, channelName)
+	if err != nil {
+		return nil, err
+	}
+
+	inputChannel := &tg.InputChannel{ChannelID: ci.ID, AccessHash: ci.AccessHash}
+	msgs, err := api.ChannelsGetMessages(ctx, &tg.ChannelsGetMessagesRequest{
+		Channel: inputChannel,
+		ID:      []tg.InputMessageClass{&tg.InputMessageID{ID: messageID}},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("channels.getMessages: %w", err)
+	}
+
+	cm, ok := msgs.(*tg.MessagesChannelMessages)
+	if !ok || len(cm.Messages) == 0 {
+		return nil, fmt.Errorf("xabar topilmadi (message_id=%d)", messageID)
+	}
+
+	msg, ok := cm.Messages[0].(*tg.Message)
+	if !ok {
+		return nil, fmt.Errorf("xabar turi mos emas: %T", cm.Messages[0])
+	}
+
+	mediaDoc, ok := msg.Media.(*tg.MessageMediaDocument)
+	if !ok || mediaDoc.Document == nil {
+		return nil, fmt.Errorf("xabarda video/hujjat yo'q")
+	}
+
+	doc, ok := mediaDoc.Document.(*tg.Document)
+	if !ok {
+		return nil, fmt.Errorf("hujjat turi mos emas: %T", mediaDoc.Document)
+	}
+
+	docCacheM.Lock()
+	docCache[cacheKey] = &docInfo{Doc: doc, CachedAt: time.Now()}
+	docCacheM.Unlock()
+
+	return doc, nil
+}
+
+func invalidateDocument(channelName string, messageID int) {
+	cacheKey := fmt.Sprintf("%s:%d", channelName, messageID)
+	docCacheM.Lock()
+	delete(docCache, cacheKey)
+	docCacheM.Unlock()
+}
+
 // ================= YORDAMCHI FUNKSIYALAR =================
 
 func loadDotEnv(filepath string) {
 	data, err := os.ReadFile(filepath)
 	if err != nil {
-		return // .env fayli bo'lmasa o'tkazib yuboriladi
+		return
 	}
 
 	lines := strings.Split(string(data), "\n")

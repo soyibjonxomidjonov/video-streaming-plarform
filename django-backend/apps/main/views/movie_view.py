@@ -40,7 +40,10 @@ class MovieViewSet(viewsets.ModelViewSet):
                 {"error": "Bu video hali tayyor emas (file_id yo'q)"},
                 status=status.HTTP_404_NOT_FOUND
             )
-        url = f"{settings.GO_STREAMER_BASE_URL}/stream/{file_id}"
+            url = (
+        f"{settings.GO_STREAMER_BASE_URL}/stream"
+        f"?channel={movie.telegram_channel}&message_id={movie.telegram_message_id}"
+    )
         return HttpResponseRedirect(url)
 
 

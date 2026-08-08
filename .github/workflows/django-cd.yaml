@@ -1,0 +1,51 @@
+name: Django CD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: AWS EC2 ga SSH orqali ulanish
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST_DNS }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ec2-user/alvion  
+            git fetch origin main
+            sudo chown -R ec2-user:ec2-user .        
+            git reset --hard origin/main
+            
+            if git diff HEAD~1 HEAD --name-only | grep -qE "requirements.txt|Dockerfile|docker-compose.yml|admin-panel/"; then
+              docker-compose up -d --force-recreate --build
+            else
+              docker-compose up -d --force-recreate
+            fi
+            docker-compose exec -T django python manage.py migrate
+            docker-compose exec -T django python manage.py collectstatic --noinput
+
+            docker image prune -f
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
