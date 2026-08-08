@@ -237,42 +237,37 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if startByte >= fileSize {
-		http.Error(w, "Requested Range Not Satisfiable", http.StatusRequestedRangeNotSatisfiable)
-		return
-	}
+    if startByte >= fileSize {
+        http.Error(w, "Requested Range Not Satisfiable", http.StatusRequestedRangeNotSatisfiable)
+        return
+    }
 
-	if endByte >= fileSize {
-		endByte = fileSize - 1
-	}
+    if endByte >= fileSize {
+        endByte = fileSize - 1
+    }
 
-	contentLength := (endByte - startByte) + 1
+    contentLength := (endByte - startByte) + 1
 
-	// Telegram MTProto Standard Alignment:
-	const alignBlock = 128 * 1024
-	alignOffset := (startByte / alignBlock) * alignBlock
-	diff := startByte - alignOffset
+    // Telegram MTProto Standard Alignment:
+    const alignBlock = 128 * 1024
+    alignOffset := (startByte / alignBlock) * alignBlock
+    diff := startByte - alignOffset
 
-	const limitBlock = 4 * 1024
-	rawLimit := int(contentLength + diff)
-	limit := ((rawLimit + limitBlock - 1) / limitBlock) * limitBlock
+    // Limit faqat qat'iy belgilangan qiymatlardan biri bo'lishi shart
+    // (1024, 2048, 4096, ... 1048576) — shuning uchun doim maksimalini so'raymiz.
+    const limit = 1024 * 1024
 
-	if limit > 1024*1024 {
-		limit = 1024 * 1024
-	}
+    location := &tg.InputDocumentFileLocation{
+        ID:            fileID,
+        AccessHash:    accessHash,
+        FileReference: fileRef,
+    }
 
-	location := &tg.InputDocumentFileLocation{
-		ID:            fileID,
-		AccessHash:    accessHash,
-		FileReference: fileRef,
-	}
-
-	req := &tg.UploadGetFileRequest{
-		Location: location,
-		Offset:   alignOffset,
-		Limit:    limit,
-	}
-
+    req := &tg.UploadGetFileRequest{
+        Location: location,
+        Offset:   alignOffset,
+        Limit:    limit,
+    }
 	res, err := worker.API.UploadGetFile(r.Context(), req)
 	if err != nil {
 		// file_reference eskirgan bo'lishi mumkin — bir marta yangilab qayta urinamiz
