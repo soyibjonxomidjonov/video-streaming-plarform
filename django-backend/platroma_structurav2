@@ -1,0 +1,50 @@
+🚀 Ultra-Optimized Video Streaming Architecture SpecificationUshbu arxitektura minimal apparat resurslari (1 vCPU, 1–4 GB RAM) bilan maksimal tarmoq unumdorligiga erishish va 200+ parallel tomoshabinga 720p HD formatdagi videolarni uzatish uchun mo‘ljallangan.1. 🏗 Tizim Arxitekturasi (System Overview)Tizim modulli mikroservislar va yuklamani to‘g‘ri taqsimlash tamoyiliga asoslangan:Django REST Framework (Backend Core):Foydalanuvchilar va autentifikatsiya (Auth/JWT).Ma’lumotlar bazasi (PostgreSQL / pgvector), qidiruv va biznes mantiq.UzbekVoiceAI, LLM va botlar bilan integratsiya.Video oqimlariga havola tayyorlab berish (Go mikroservisiga yo‘naltirish).Go / Golang (Streamer Microservice):Video oqimini (Chunk-by-Chunk Streaming) uzatish.Minimal RAM sarfi bilan gigabaytlab ma’lumotlarni o‘tkazish (io.TeeReader va io.Copy).Local Telegram Bot API va lokal SSD kesh bilan to‘g‘ridan-to‘g‘ri ishlash.Local Telegram Bot API Server:Telegram’dan 2 GB gacha bo‘lgan media fayllarni tezkor yuklab olish.--local bayrog‘i orqali Docker Volume'ga fayllarni saqlash va Go’ga to‘g‘ridan-to‘g‘ri kirish huquqini berish.Infrastruktura (Server & Network):Tavsiya etilgan Server: Hetzner Cloud (CX22 / CX32).Tarmoq (Bandwidth): 1 Gbps kafolatlangan port + 20 TB tekin trafik/oy.OS Sozlamalari: 6 GB SWAP, vm.swappiness = 10.2. 🔄 Video Oqimi va Kesh Mantiqi (Data Flow)Videoni uzatish Nol Kutish (Zero Latency) tamoyilida ishlaydi:Plaintext[User Browser/App] <--- (HTTP Stream) ---> [Go Streamer]
+                                               |
+                                     +---------+---------+
+                                     |                   |
+                           (1. Live Stream)     (2. Local Cache Write)
+                                     |                   |
+                       [Local Telegram Bot API] ----> [SSD Disk Storage]
+So‘rov kelsa: User pleyeridan Go mikroservisiga file_id keladi.Keshni tekshirish:Hot (SSD’da bor): Go faylni darhol SSD diskdan stream qiladi (Telegram’ga so‘rov ketmaydi).Cold (SSD’da yo‘q): Go Local Telegram Bot API orqali Telegram’dan faylni tortadi.Chunked Streaming (io.TeeReader):Telegram’dan kelayotgan birinchi 32 KB ma'lumot olinishi bilanoq darhol foydalanuvchiga uzatiladi (User videoni o‘sha soniyada ko‘radi).Bir vaqtning o‘zida ushbu oqim SSD diskka saqlanib boriladi.RAM sarfi: Streaming jarayonida Go’da xotira sarfi har bir ulanish uchun bor-yo‘g‘i ~100 KB – 500 KB ni tashkil etadi.3. ⚙️ Server va OS OptimallashtiruviA. Linux Swappiness BalansiRAM to‘lganida server qotib qolmasligi va SSD disk ortiqcha yeyilmasligi uchun:Bash# Vaqtincha qo'llash
+sudo sysctl vm.swappiness=10
+
+# Doimiy (Permanent) saqlash
+echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf
+B. Rate Limiting (Concurrency Limit)O‘ta yuqori yuklamalarda Telegram IP-block berishi va tarmoq kanali to‘lib qolmasligi uchun Go ichida parallel yuklash chegaralanadi:Go// Parallel Telegram yuklamalarini 20-30 tagacha cheklash
+var telegramLimiter = make(chan struct{}, 20)
+
+func StreamFromTelegram(file_id string) {
+    telegramLimiter <- struct{}{}
+    defer func() { <-telegramLimiter }()
+
+    // Telegram Fetch + Stream logic
+}
+4. 📊 Unumdorlik va Imkoniyatlar (Metrics & Capacity)Hetzner CX22 ($5–7/oy) serveri uchun hisoblangan texnik ko‘rsatkichlar:Ko‘rsatkichBirlik / QiymatIzohServer Resursi2 vCPU, 4 GB RAMLinux + Docker + Django + Go + Bot APITarmoq Porti1 Gbps (1,000 Mbps)Asosiy tor bo‘g‘iz (bottleneck)Max Parallel Streaming (720p HD)200 – 260 ta foydalanuvchi~$800 \text{ Mbps} / 3 \text{ Mbps/user}$RAM Ishlatilishi (Go Streamer)~100 MB RAM200 ta parallel streaming vaqtidaOylik Trafik Sig‘imi20 Terabayt~16,600 soat 720p HD video ijrosi5. 🛠 Docker Integration Example (docker-compose.yml)YAMLversion: '3.8'
+
+services:
+  telegram-bot-api:
+    image: aiogram/telegram-bot-api:latest
+    environment:
+      TELEGRAM_API_ID: "${TELEGRAM_API_ID}"
+      TELEGRAM_API_HASH: "${TELEGRAM_API_HASH}"
+    command: ["--local"]
+    volumes:
+      - telegram-bot-api-data:/var/lib/telegram-bot-api
+
+  go-streamer:
+    build: ./go-streamer
+    ports:
+      - "8080:8080"
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - BOT_API_URL=http://telegram-bot-api:8081
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+    volumes:
+      - telegram-bot-api-data:/var/lib/telegram-bot-api:ro
+
+volumes:
+  telegram-bot-api-data:
+💡 XulosaUshbu arxitektura minimum xarajat ($0–$7/oy) bilan maksimal samaradorlikni beradi. Tizim tarmoq kanalini to‘liq nazorat qiladi va xotira tugashi (OOM Crash) xavfini 0% ga tushiradi.

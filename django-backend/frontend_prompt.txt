@@ -1,0 +1,175 @@
+# Frontend Test Loyihasi — AI Coding Tool uchun Prompt va Qo'llanma
+
+Bu faylda ikki qism bor:
+1. **PROMPT** — buni to'g'ridan-to'g'ri Antigravity (yoki Cursor, Claude Code va h.k.)ga nusxalab bering
+2. **QO'LLANMA** — frontend qanday ishlashi kerakligini siz tushunishingiz uchun, o'z so'zim bilan tushuntirilgan
+
+---
+
+## 1-QISM: AI CODING TOOL'GA BERISH UCHUN PROMPT
+
+```
+Menga ovoz orqali boshqariladigan video pleer uchun MINIMAL, sinov maqsadidagi
+frontend kerak. Bu - ishlab chiqarish uchun emas, backend (Django Channels)
+bilan WebSocket integratsiyasini sinash uchun.
+
+TEXNOLOGIYA: Oddiy HTML + CSS + JavaScript (bitta fayl, hech qanday build
+jarayoni kerak emas - to'g'ridan-to'g'ri brauzerda ochilishi kerak).
+
+SAHIFA TUZILISHI:
+1. Yuqorida: WebSocket ulanish holati indikatori (yashil/qizil nuqta + matn:
+   "Ulangan" / "Ulanmagan" / "Ulanmoqda...")
+2. O'rtada: HTML5 <video> elementi (istalgan test video fayl, masalan
+   Big Buck Bunny ochiq manba video URL'ini standart src sifatida qo'ying:
+   https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4)
+   Video ostida standart controls (play/pause/volume) ko'rinib tursin.
+3. Video ostida: katta, aylana mikrofon tugmasi. Bosilganda qizil rangga
+   o'tib, "Tinglayapman..." matnini ko'rsatsin. Yana bosilsa - o'chsin.
+4. Mikrofon tugmasi ostida: joriy holat matni ("Kutmoqda" / "Tinglayapman" /
+   "O'ylayapman..." / "Bajarildi: <action nomi>")
+5. Pastda: log paneli - barcha yuborilgan va qabul qilingan WebSocket
+   xabarlarini vaqt belgisi bilan ro'yxat qilib ko'rsatsin (debugging uchun,
+   Postman/Insomnia'dagi "Response" panelига o'xshab)
+
+FUNKSIONAL TALABLAR:
+
+A) WebSocket ulanish:
+   - Sahifa yuklanganda avtomatik ulanadi:
+     ws://127.0.0.1:8000/ws/agent/test/?token=JWT_TOKEN_BU_YERGA
+   - JWT tokenni sahifa yuqorisidagi input maydoniga yozib, "Ulash" tugmasi
+     bosilganda shu token bilan qayta ulanish imkonini bering (test qulayligi
+     uchun, chunki tokenni har safar qo'lda kiritish kerak bo'ladi)
+   - Ulanish uzilsa, holat indikatorini "Ulanmagan" qiling, avtomatik qayta
+     ulanishga urinmang (bu faqat sinov, oddiy bo'lsin)
+
+B) Ovoz yozish (Web Speech API):
+   - webkitSpeechRecognition yoki SpeechRecognition ishlatilsin
+   - lang = "uz-UZ" (agar qo'llab-quvvatlanmasa, "en-US"ga fallback)
+   - continuous = true, interimResults = true
+   - Faqat isFinal=true bo'lgan natija WebSocket orqali yuborilsin, quyidagi
+     formatda: {"text": "foydalanuvchi aytgan matn"}
+   - Interim (yakunlanmagan) natija - holat matni ostida kulrang, kursiv
+     shriftda "jonli" ko'rsatilsin (foydalanuvchi o'z ovozini "ko'rishi" uchun)
+   - Brauzer Speech API'ni qo'llab-quvvatlamasa - mikrofon tugmasi o'rniga
+     oddiy matn input + "Yubor" tugmasi ko'rsatilsin (fallback)
+
+C) WebSocket'dan keladigan xabarlarni qayta ishlash - har bir "type" uchun:
+   - {"type": "connected", ...} -> holat indikatorini "Ulangan"ga o'zgartirish
+   - {"type": "status", "payload": {"state": "thinking"}} -> holat matnini
+     "O'ylayapman..." qilish
+   - {"type": "action", "payload": {"action": "...", "params": {...}}} ->
+     pastdagi ACTION DISPATCHER orqali bajarish
+   - {"type": "response", "payload": {"text": "..."}} -> holat matnida shu
+     matnni ko'rsatish
+   - {"type": "error", "payload": {"message": "..."}} -> qizil rangda xato
+     xabarini ko'rsatish
+
+D) ACTION DISPATCHER - quyidagi action nomlari uchun aniq JS logikasi yozilsin:
+   - pause_video -> video.pause()
+   - play_video -> video.play()
+   - seek_forward (params.seconds) -> video.currentTime += seconds
+   - seek_backward (params.seconds) -> video.currentTime -= seconds
+   - seek_to_time (params.seconds) -> video.currentTime = seconds
+   - set_volume (params.value, 0.0-1.0) -> video.volume = value
+   - increase_volume (params.step) -> video.volume = Math.min(1, video.volume + step)
+   - decrease_volume (params.step) -> video.volume = Math.max(0, video.volume - step)
+   - mute -> video.muted = true
+   - unmute -> video.muted = false
+   - toggle_fullscreen -> video.requestFullscreen() / document.exitFullscreen()
+   - set_playback_speed (params.speed) -> video.playbackRate = speed
+   - next_episode / previous_episode / restart_episode -> hozircha faqat
+     console.log("(demo) " + action nomi) - haqiqiy epizod almashtirish yo'q,
+     bu faqat log qatorida ko'rinsin
+   - scroll_down (params.amount: small/normal/large) -> window.scrollBy
+     mos qiymat bilan (masalan small=100, normal=300, large=800)
+   - scroll_up - xuddi shunday, teskari yo'nalishda
+   - scroll_to_bottom -> window.scrollTo(0, document.body.scrollHeight)
+   - scroll_to_top -> window.scrollTo(0, 0)
+   - Har bir action bajarilganda, video/sahifa elementida QISQA vizual
+     "yonish" effekti bo'lsin (masalan 300ms davomida chegarasi yashil
+     porlab, keyin normal holatga qaytsin) - foydalanuvchi "AI nimadir
+     qildi"ni ko'rishi uchun
+
+E) Log paneli:
+   - Yuborilgan xabarlar - sariq/oltin rang bilan, chapga strelka bilan
+   - Qabul qilingan xabarlar - ko'k rang bilan, o'ngga strelka bilan
+   - Har birida aniq vaqt (soat:daqiqa:soniya.millisekund)
+   - Eng yangi xabar yuqorida ko'rinsin
+
+DIZAYN: qorong'i mavzu (dark theme), zamonaviy va toza ko'rinish, lekin bu -
+FUNKSIONAL SINOV uchun, shuning uchun murakkab animatsiyalarga vaqt sarflamang,
+faqat yuqorida aytilgan asosiy holat o'zgarishlari va vizual feedback yetarli.
+
+Bularning barchasini BITTA HTML faylida (ichiga <style> va <script> bilan)
+yozib bering, tashqi build jarayoni yoki npm kerak bo'lmasin.
+```
+
+---
+
+## 2-QISM: QO'LLANMA — FRONTEND QANDAY ISHLASHI KERAK (tushunish uchun)
+
+### Umumiy oqim
+
+```
+Sahifa ochiladi
+    │
+    ▼
+WebSocket avtomatik ulanadi (token bilan)
+    │
+    ▼
+Foydalanuvchi mikrofon tugmasini bosadi
+    │
+    ▼
+Brauzer ovozni tinglay boshlaydi (Web Speech API)
+    │
+    ▼
+Foydalanuvchi gapiradi: "pauza qil"
+    │
+    ▼
+Brauzer buni matnga aylantiradi ("isFinal: true" bo'lganda)
+    │
+    ▼
+Matn WebSocket orqali backend'ga yuboriladi: {"text": "pauza qil"}
+    │
+    ▼
+Backend "thinking" statusini qaytaradi (UI'da "O'ylayapman..." ko'rinadi)
+    │
+    ▼
+Backend LLM orqali tool tanlaydi, natija qaytadi:
+    {"type": "action", "payload": {"action": "pause_video", "params": {}}}
+    │
+    ▼
+Frontend ACTION DISPATCHER'i shu action'ni ko'rib, haqiqiy JS bajaradi:
+    document.querySelector("video").pause()
+    │
+    ▼
+Video to'xtaydi, foydalanuvchi natijani ko'radi
+```
+
+### Nega har bir qism aynan shunday ishlashi kerak
+
+**WebSocket ulanish — nega token URL'da?**
+
+Sizning backend middleware'ingiz (`JWTAuthMiddleware`) tokenni **query string**dan (`?token=...`) o'qiydi, chunki WebSocket protokolida HTTP header'lar kabi qulay "Authorization" header yuborish qiyinroq (ba'zi brauzer WebSocket klientlari buni to'liq qo'llamaydi). Shuning uchun token har doim URL orqali yuboriladi — bu sizning backend arxitekturangizga mos.
+
+**Nega faqat `isFinal: true` yuboriladi, har bir harf emas?**
+
+Agar siz har bir oraliq (interim) natijani ham yuborsangiz, backend LLM'ni **tugallanmagan jumlalar** bilan bombardimon qilasiz (masalan "pa", "pau", "pauza", "pauza qi", "pauza qil" — beshta alohida so'rov, bittasi o'rniga). Bu — ham keraksiz LLM chaqiruvlari (xarajat + tezlik), ham noto'g'ri natija xavfi. Shuning uchun faqat foydalanuvchi **gapini tugatgach** (`isFinal`), bitta to'liq matn yuboriladi.
+
+**Nega "Action Dispatcher" alohida, markaziy joyda bo'lishi kerak?**
+
+Bu — sizning butun tizimingizning **"tarjimon"** qismi: backend LLM faqat **"nima qilish kerak"**ligini (masalan `"pause_video"` degan so'z) aytadi, lekin **"buni qanday bajarish"** — bu **butunlay frontend'ning ishi**. Agar bu mantiq sahifa bo'ylab tarqoq bo'lsa (har joyda alohida `if`lar), keyinchalik yangi action qo'shish yoki debugging qilish qiyinlashadi. Markaziy joyda bo'lsa — yangi action qo'shish uchun faqat **bitta joyga** yangi `case` qo'shasiz.
+
+**Nega vizual "yonish effekti" muhim?**
+
+Bu — avvalgi suhbatlarimizda muhokama qilgan **"foydalanuvchi AI'ning tirik ishlayotganini his qilishi"** kerakligi bilan bog'liq. Agar action jim, hech qanday belgisiz bajarilsa, foydalanuvchi ba'zan "tizim ishladimi yoki yo'qmi" ekanini bilolmay qoladi (ayniqsa tez amallar uchun, masalan volume o'zgarishi sekin ko'zga tashlanmasligi mumkin). Qisqa vizual signal — bu ishonchni beradi.
+
+**Nega log paneli kerak (bu chiroyli ko'rinish uchun emas)?**
+
+Bu — sinov bosqichida **eng muhim debugging quroli**. Frontend ishlab chiquvchi (yoki siz) har bir yuborilgan/qabul qilingan xabarni **aniq ko'rishi** kerak — agar biror action ishlamasa, "backend noto'g'ri JSON yubordimi, yoki frontend uni noto'g'ri o'qidimi" ekanini **darhol** ko'rish imkonini beradi, konsolni ochib qidirish shart bo'lmaydi.
+
+### Sinov qilishda e'tibor bering
+
+1. Avval **matn input** orqali sinang (mikrofonsiz) — `{"text": "pauza qil"}` qo'lda yuboring, action to'g'ri bajarilishini tekshiring. Bu — ovoz masalasidan mustaqil, faqat WebSocket+dispatcher to'g'ri ishlashini tasdiqlaydi
+2. Keyin mikrofon bilan sinang — endi STT ("Speech-to-Text") ham to'g'ri ishlayotganini tekshirasiz
+3. Agar biror action ishlamasa — birinchi navbatda **log panelini** tekshiring: xabar to'g'ri kelganmi, `action` nomi sizning dispatcher'dagi `case` bilan **harfma-harf** mos keladimi (kichik imlo farqi — masalan `pauseVideo` vs `pause_video` — butun zanjirni "sindirishi" mumkin)

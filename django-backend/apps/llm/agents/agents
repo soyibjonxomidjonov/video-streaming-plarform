@@ -1,0 +1,18 @@
+Albatta, keling avval to'liq tool/action ro'yxatini tuzib chiqamiz — bu sizning "boshqaruv doirasi"ning to'liq xaritasi bo'ladi. Bularni keyinchalik LangGraph'da har birini alohida @tool sifatida yozasiz.
+1. Video pleer boshqaruvi (asosiy, eng ko'p ishlatiladigan)
+Tool nomiParametrlarVazifasipause_video—Videoni to'xtatishplay_video—Videoni davom ettirishseek_forwardseconds (default: 10)Oldinga o'tkazishseek_backwardseconds (default: 10)Orqaga qaytarishseek_to_timesecondsAniq vaqtga o'tish ("5-daqiqaga o't")set_volumevalue (0.0–1.0)Ovozni aniq darajaga qo'yishincrease_volumestep (default: 0.1)Ovozni ko'tarish (nisbiy)decrease_volumestep (default: 0.1)Ovozni pasaytirish (nisbiy)mute / unmute—Ovozni o'chirish/yoqishtoggle_fullscreen—To'liq ekran rejimiset_playback_speedspeed (0.5, 1, 1.5, 2)Tezlikni o'zgartirishnext_episode—Keyingi qismga o'tishprevious_episode—Oldingi qismga qaytishrestart_episode—Qismni boshidan boshlash
+2. Navigatsiya (sahifalar orasida)
+Tool nomiParametrlarVazifasinavigate_home—Bosh sahifaga o'tishnavigate_to_pagepageAniq sahifaga o'tishopen_profile—Profil sahifasini ochishgo_back—Oldingi sahifaga qaytishclose_player—Video pleerni yopib, ro'yxatga qaytish
+3. Qidiruv va tavsiya (3-qatlam, murakkab so'rovlar)
+Tool nomiParametrlarVazifasisearch_contentqueryUmumiy qidiruv (nom, janr, aktyor bo'yicha)filter_by_genregenreJanr bo'yicha filtrlash ("kulgili", "romantik")recommend_similarbased_on_idO'xshash kontent tavsiya qilishsearch_by_actoractor_nameAktyor bo'yicha qidirish
+4. Foydalanuvchi profili/tarixi bilan bog'liq
+Tool nomiParametrlarVazifasiadd_to_favoritescontent_idSevimlilarga qo'shishremove_from_favoritescontent_idSevimlilardan o'chirishshow_watch_history—Tomosha tarixini ko'rsatishcontinue_watching—"Qolgan joydan davom et"
+5. Suhbat/ma'lumot beruvchi (action emas, faqat javob)
+Tool nomiParametrlarVazifasianswer_question— (LLM to'g'ridan-to'g'ri javob beradi)"Bu dorama nima haqida?", "Necha qism bor?" kabi savollarexplain_scene—Joriy sahna haqida ma'lumot (agar mavjud bo'lsa)
+Muhim eslatmalar (ro'yxatni tuzishda hisobga oling)
+
+Har bir tool nomi — fe'l + ot shaklida bo'lsin (pause_video, set_volume) — bu LLM uchun ham, sizning kodingiz uchun ham tushunarliroq va bir xillikni saqlaydi.
+1-qatlam (LLM'siz) uchun mos tool'lar: pause_video, play_video, mute, unmute — bular hech qanday parametrsiz, shuning uchun aniq kalit so'z bilan darhol aniqlanadi.
+2-qatlam (kichik model) uchun mos tool'lar: parametri bor, lekin oddiy — set_volume, seek_forward, set_playback_speed, next_episode.
+3-qatlamga tushadigan tool'lar: search_content, recommend_similar, answer_question — bular tushunish va ko'pincha tashqi ma'lumot (DB so'rovi) talab qiladi.
+Har bir tool uchun aniq "muvaffaqiyatsizlik" holatini o'ylab qo'ying — masalan next_episode chaqirilganda keyingi qism yo'q bo'lsa, tool nima qaytarishi kerak? Buni hozirdan rejalashtirish keyin qiyinchilik tug'dirmaydi.
