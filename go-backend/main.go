@@ -205,6 +205,8 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("[REQUEST] [Bot #%d] channel=%s message_id=%d range=%q", worker.ID, channelName, messageID, r.Header.Get("Range"))
+
 	doc, err := getDocument(r.Context(), worker.API, channelName, messageID)
 	if err != nil {
 		log.Printf("[ERROR] [Bot #%d] Video topilmadi (channel=%s, message_id=%d): %v", worker.ID, channelName, messageID, err)
@@ -248,14 +250,18 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 
     contentLength := (endByte - startByte) + 1
 
-    // Telegram MTProto Standard Alignment:
-    const alignBlock = 128 * 1024
+    // Limit faqat qat'iy belgilangan qiymatlardan biri bo'lishi shart
+    // (1024, 2048, 4096, ... 1048576). Oddiy (premium bo'lmagan) bot
+    // hisoblari uchun 1MB (1048576) ba'zan LIMIT_INVALID beradi,
+    // shuning uchun keng qo'llab-quvvatlanadigan 512KB ishlatamiz.
+    const limit = 512 * 1024
+
+    // MTProto qoidasi: offset DOIM limitga karrali bo'lishi shart
+    // (offset % limit == 0). Shuning uchun alignBlock ham limitning
+    // o'ziga teng bo'lishi kerak — aks holda LIMIT_INVALID chiqadi.
+    const alignBlock = limit
     alignOffset := (startByte / alignBlock) * alignBlock
     diff := startByte - alignOffset
-
-    // Limit faqat qat'iy belgilangan qiymatlardan biri bo'lishi shart
-    // (1024, 2048, 4096, ... 1048576) — shuning uchun doim maksimalini so'raymiz.
-    const limit = 1024 * 1024
 
     location := &tg.InputDocumentFileLocation{
         ID:            fileID,
@@ -280,7 +286,10 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if err != nil {
-			log.Printf("[ERROR] [Bot #%d] MTProto UploadGetFile error: %v", worker.ID, err)
+			log.Printf(
+				"[ERROR] [Bot #%d] MTProto UploadGetFile error: %v | offset=%d limit=%d diff=%d startByte=%d endByte=%d fileSize=%d",
+				worker.ID, err, alignOffset, limit, diff, startByte, endByte, fileSize,
+			)
 			http.Error(w, "Telegram'dan yuklab bo'lmadi", http.StatusBadGateway)
 			return
 		}
@@ -311,8 +320,10 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 
 		w.Write(bytesToWrite)
 
+		log.Printf("[SERVED] [Bot #%d] channel=%s message_id=%d bytes=%d-%d/%d", worker.ID, channelName, messageID, startByte, actualEndByte, fileSize)
+
 	default:
-		log.Printf("[ERROR] [Bot #%d] Kutilmagan Telegram javob turi", worker.ID)
+		log.Printf("[ERROR] [Bot #%d] Kutilmagan Telegram javob turi: %T (channel=%s message_id=%d)", worker.ID, chunk, channelName, messageID)
 		http.Error(w, "Server xatosi", http.StatusInternalServerError)
 	}
 }
