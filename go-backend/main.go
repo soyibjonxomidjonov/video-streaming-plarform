@@ -92,7 +92,11 @@ func main() {
 						return err
 					}
 
-					log.Printf("[SUCCESS] Bot #%d muvaffaqiyatli ulandi: @%s", id, status.User.Username)
+					username := "noma'lum"
+					if u, ok := status.User.(*tg.User); ok {
+						username = u.Username
+					}
+					log.Printf("[SUCCESS] Bot #%d muvaffaqiyatli ulandi: @%s", id, username)
 
 					worker := &BotWorker{
 						ID:     id,
