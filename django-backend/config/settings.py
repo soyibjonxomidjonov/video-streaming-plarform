@@ -258,4 +258,4 @@ CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND") #Redis yoki bosh
 
 
 # GO_STREAMER_BASE_URL = os.environ.get("GO_STREAMER_BASE_URL", "http://go-streamer:8081")
-GO_STREAMER_BASE_URL="http://localhost:8081"
+GO_STREAMER_BASE_URL="http://16.170.242.253:8081"
