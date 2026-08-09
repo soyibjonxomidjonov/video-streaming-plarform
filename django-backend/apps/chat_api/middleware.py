@@ -46,7 +46,7 @@ class JWTAuthMiddleware(BaseMiddleware):
     def get_user_from_db(self, user_id):
         try:
             user = User.objects.get(id=user_id)
-            print(f"Foydalanuvchi topildi: {user.username}")
+            print(f"Foydalanuvchi topildi: {user.email}")
             return user
         except User.DoesNotExist:
             print(f"❌ Foydalanuvchi topilmadi: id={user_id}")
