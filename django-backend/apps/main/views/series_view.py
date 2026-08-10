@@ -1,6 +1,9 @@
 from rest_framework.pagination import PageNumberPagination
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import viewsets
+
+from apps.main.filters.series_filter import SeriesFilter, EpisodeFilter, RatingSeriesFilter, CommentSeriesFilter, \
+    FavoritesSeriesFilter, WatchProgressEpisodeFilter
 from apps.main.serializers.series_serializers import (SeriesSerializerConfig, EpisodeSerializerConfig,
                                                      Rating_SeriesSerializerConfig, Favorites_SeriesSerializerConfig,
                                                      WatchProgress_EpisodeSerializerConfig, Comment_SeriesSerializerConfig
@@ -13,7 +16,8 @@ from django.http import HttpResponseRedirect
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework import status
-
+from django_filters import rest_framework as django_filters  # pip install django-filter
+from rest_framework import filters
 
 class CustomPagination(PageNumberPagination):
     page_size = 5
@@ -27,9 +31,9 @@ class SeriesViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStaffOrReadOnly]
     queryset = Series.objects.all()
     serializer_class = SeriesSerializerConfig
-    # filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
-    # filterset_class = CategoryFilter
-    # search_fields = ['name']
+    filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
+    filterset_class = SeriesFilter
+    search_fields = ['title', 'description', 'genres__name']
     pagination_class = CustomPagination
 
 class EpisodeViewSet(viewsets.ModelViewSet):
@@ -37,9 +41,9 @@ class EpisodeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStaffOrReadOnly]
     queryset = Episode.objects.all()
     serializer_class = EpisodeSerializerConfig
-    # filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
-    # filterset_class = CategoryFilter
-    # search_fields = ['name']
+    filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
+    filterset_class = EpisodeFilter
+    search_fields = ['series__title', 'telegram_channel', 'telegram_file_id']
     pagination_class = CustomPagination
 
     @action(detail=True, methods=['get'])
@@ -62,9 +66,9 @@ class Rating_SeriesViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStaffOrReadOnly]
     queryset = Rating_Series.objects.all()
     serializer_class = Rating_SeriesSerializerConfig
-    # filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
-    # filterset_class = CategoryFilter
-    # search_fields = ['name']
+    filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
+    filterset_class = RatingSeriesFilter
+    search_fields = ['user__email', 'user__first_name', 'user__last_name', 'series__title']
     pagination_class = CustomPagination
 
 
@@ -73,9 +77,9 @@ class Comment_SeriesViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStaffOrReadOnly]
     queryset = Comment_Series.objects.all()
     serializer_class = Comment_SeriesSerializerConfig
-    # filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
-    # filterset_class = CategoryFilter
-    # search_fields = ['name']
+    filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
+    filterset_class = CommentSeriesFilter
+    search_fields = ['text', 'user__email', 'user__first_name', 'user__last_name', 'series__title']
     pagination_class = CustomPagination
 
 
@@ -85,9 +89,9 @@ class Favorites_SeriesViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStaffOrReadOnly]
     queryset = Favorites_Series.objects.all()
     serializer_class = Favorites_SeriesSerializerConfig
-    # filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
-    # filterset_class = CategoryFilter
-    # search_fields = ['name']
+    filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
+    filterset_class = FavoritesSeriesFilter
+    search_fields = ['user__email', 'user__first_name', 'user__last_name', 'series__title']
     pagination_class = CustomPagination
 
 
@@ -96,7 +100,7 @@ class WatchProgress_EpisodeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStaffOrReadOnly]
     queryset = WatchProgress_Episode.objects.all()
     serializer_class = WatchProgress_EpisodeSerializerConfig
-    # filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
-    # filterset_class = CategoryFilter
-    # search_fields = ['name']
+    filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
+    filterset_class = WatchProgressEpisodeFilter
+    search_fields = ['user__email', 'user__first_name', 'user__last_name', 'episode__series__title']
     pagination_class = CustomPagination

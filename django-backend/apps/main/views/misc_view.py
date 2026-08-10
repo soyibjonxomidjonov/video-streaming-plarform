@@ -5,7 +5,9 @@ from apps.main.serializers.misc_serializers import GenreSerializerConfig
 from apps.main.models.misc import Genre
 from apps.main.permissions import IsStaffOrReadOnly
 
-
+from apps.main.filters.misc_filter import GenreFilter
+from django_filters import rest_framework as django_filters  # pip install django-filter
+from rest_framework import filters
 
 
 class CustomPagination(PageNumberPagination):
@@ -20,9 +22,9 @@ class GenreViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStaffOrReadOnly]
     queryset = Genre.objects.all()
     serializer_class = GenreSerializerConfig
-    # filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
-    # filterset_class = CategoryFilter
-    # search_fields = ['name']
+    filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
+    filterset_class = GenreFilter
+    search_fields = ['name']
     pagination_class = CustomPagination
 
 
