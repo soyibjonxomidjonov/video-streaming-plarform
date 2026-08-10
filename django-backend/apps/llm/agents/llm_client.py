@@ -3,7 +3,8 @@ from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
 from apps.llm.agents.prompts import  SYSTEM_PROMPT
-from apps.llm.agents.content_agents import TOOLS
+# from apps.llm.agents.content_agents import TOOLS
+from apps.llm.agents.content_agents_v2 import TOOLS
 
 load_dotenv()
 

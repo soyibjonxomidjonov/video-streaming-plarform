@@ -1,138 +1,112 @@
-
 services:
+    postgres:
+        image: pgvector/pgvector:pg15
+        container_name: postgres
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        environment:
+            POSTGRES_DB: ${DATABASE_NAME}
+            POSTGRES_USER: ${DATABASE_USER}
+            POSTGRES_PASSWORD: ${USER_PASSWORD}
+        ports:
+            - "5432:5432"
+        restart: unless-stopped
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}",
+                ]
+            interval: 5s
+            timeout: 5s
+            retries: 10
 
-  postgres:
-      image: postgres:15
-      container_name: postgres
-      volumes:
-        - postgres_data:/var/lib/postgresql/data
-      environment:
-        POSTGRES_DB: ${DATABASE_NAME}
-        POSTGRES_USER: ${DATABASE_USER}
-        POSTGRES_PASSWORD: ${USER_PASSWORD}
-      ports:
-        - "5432:5432"
-      restart: unless-stopped
-      healthcheck:
-        test: [ "CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}" ]
-        interval: 5s
-        timeout: 5s
-        retries: 10
+    redis:
+        image: redis:7-alpine
+        container_name: redis
+        restart: unless-stopped
 
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
+    rabbitmq:
+        image: rabbitmq:3-management-alpine
+        container_name: rabbitmq
+        restart: unless-stopped
+        env_file:
+            - ./django-backend/.env
+        environment:
+            RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+            RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+        ports:
+            - "5672:5672"
+            - "15672:15672"
 
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: rabbitmq
-    restart: unless-stopped
-    env_file:
-      - ./django-backend/.env
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+    telegram-bot-api:
+        image: aiogram/telegram-bot-api:latest
+        container_name: telegram-bot-api
+        restart: unless-stopped
+        env_file:
+            - ./go-backend/.env
+        environment:
+            TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+            TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
+            TELEGRAM_HTTP_PORT: 8080
+            TELEGRAM_LOCAL: 1
 
+        volumes:
+            - bot_api_data:/var/lib/telegram-bot-api
+        ports:
+            - "8080:8080"
 
-  telegram-bot-api:
-    image: aiogram/telegram-bot-api:latest
-    container_name: telegram-bot-api
-    restart: unless-stopped
-    env_file:
-      - ./go-backend/.env
-    environment:
-      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
-      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
-      TELEGRAM_HTTP_PORT: 8080
-      TELEGRAM_LOCAL: 1
+    go-streamer:
+        build: ./go-backend
+        container_name: go-streamer
+        restart: unless-stopped
+        env_file:
+            - ./go-backend/.env
+        volumes:
+            - cache_data:/cache
+            - bot_api_data:/var/lib/telegram-bot-api:ro
+        ports:
+            - "8081:8081"
+        depends_on:
+            - telegram-bot-api
 
-    volumes:
-      - bot_api_data:/var/lib/telegram-bot-api
-    ports:
-      - "8080:8080"
+    django:
+        build: ./django-backend
+        container_name: django
+        restart: unless-stopped
+        env_file:
+            - ./django-backend/.env
+        volumes:
+            - ./django-backend:/app
+        ports:
+            - "8000:8000"
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_started
+            rabbitmq:
+                condition: service_started
+        command: daphne -b 0.0.0.0 -p 8000 config.asgi:application
 
-
-
-  go-streamer:
-    build: ./go-backend
-    container_name: go-streamer
-    restart: unless-stopped
-    env_file:
-      - ./go-backend/.env
-    volumes:
-      - cache_data:/cache
-      - bot_api_data:/var/lib/telegram-bot-api:ro
-    ports:
-      - "8081:8081"
-    depends_on:
-      - telegram-bot-api
-
-
-
-
-  django:
-    build: ./django-backend
-    container_name: django
-    restart: unless-stopped
-    env_file:
-      - ./django-backend/.env
-    volumes:
-      - ./django-backend:/app
-    ports:
-      - "8000:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
-    command: daphne -b 0.0.0.0 -p 8000 config.asgi:application
-
-
-
-  celery:
-    build: ./django-backend
-    container_name: celery
-    restart: unless-stopped
-    env_file:
-      - ./django-backend/.env
-    volumes:
-      - ./django-backend:/app
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
-    command: celery -A config worker --loglevel=info
-
+    celery:
+        build: ./django-backend
+        container_name: celery
+        restart: unless-stopped
+        env_file:
+            - ./django-backend/.env
+        volumes:
+            - ./django-backend:/app
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_started
+            rabbitmq:
+                condition: service_started
+        command: celery -A config worker --loglevel=info
 
 volumes:
-  postgres_data:
-  bot_api_data:
-  cache_data:
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    postgres_data:
+    bot_api_data:
+    cache_data:
