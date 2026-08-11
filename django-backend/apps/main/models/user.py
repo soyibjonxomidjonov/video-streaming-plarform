@@ -40,7 +40,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     age = models.IntegerField(null=True, blank=True)
 
 
-    data_joined = models.DateTimeField(default=timezone.now)
+    date_joined = models.DateTimeField(default=timezone.now)
 
     picture = models.ImageField(upload_to='avatars/', null=True, blank=True)
 
