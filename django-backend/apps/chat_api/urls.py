@@ -19,6 +19,7 @@ from apps.main.views import misc_view
 from apps.main.views import movie_view
 from apps.main.views import series_view
 from ..llm.views import SearchIndexViewSet
+from ..main.views.misc_view import UserViewSet
 
 
 class JWTSchemaGenerator(OpenAPISchemaGenerator):
@@ -53,6 +54,7 @@ router = DefaultRouter()
 router.register(r'message', MessageViewSet, basename='message')
 router.register(r'genre', misc_view.GenreViewSet, basename='genre')
 router.register(r'embedding_search', SearchIndexViewSet, basename='searchIndex')
+router.register(r'users', UserViewSet, basename='users')
 
 
 # Series
