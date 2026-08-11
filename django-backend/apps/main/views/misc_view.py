@@ -1,10 +1,9 @@
-from autobahn.wamp.gen.wamp.proto.Authenticate import AuthenticateEnd
 from rest_framework.pagination import PageNumberPagination
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import viewsets
 from apps.main.serializers.misc_serializers import GenreSerializerConfig
 from apps.main.models.misc import Genre
-from apps.main.permissions import IsStaffOrReadOnly
+from apps.main.permissions import IsStaffOrReadOnly,IsSuperuserOrReadOnly
 
 from apps.main.filters.misc_filter import GenreFilter
 from django_filters import rest_framework as django_filters  # pip install django-filter
@@ -37,7 +36,7 @@ class GenreViewSet(viewsets.ModelViewSet):
 
 class UserViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsStaffOrReadOnly]
+    permission_classes = [IsSuperuserOrReadOnly]
     queryset = User.objects.all()
     serializer_class = UserSerializerConfig
     # filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)

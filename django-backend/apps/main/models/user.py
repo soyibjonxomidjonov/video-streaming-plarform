@@ -62,14 +62,29 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def save(self, *args, **kwargs):
         if not self.pk and not self.first_name:
             if self.email:
-                self.first_name = self.email.split("@")[1]
+                self.first_name = self.email.split("@")[0]
 
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.email
 
+from rest_framework import permissions
 
+
+class IsSuperuserOrReadOnly(permissions.BasePermission):
+    """
+    Agar so'rov yuborgan foydalanuvchi superuser bo'lsa, productlarni
+    yaratish/edit/delete qila oladi. Aks holda faqat o'qiy oladi (GET, HEAD, OPTIONS).
+    """
+
+    def has_permission(self, request, view):
+        # SAFE_METHODS = GET, HEAD, OPTIONS — bularga hammaga ruxsat
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # Qolgan metodlar (POST, PUT, PATCH, DELETE) — faqat superuser
+        return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
 
 
 
