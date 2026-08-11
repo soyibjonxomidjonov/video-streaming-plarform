@@ -1,3 +1,4 @@
+import itertools
 import os
 from langchain_groq import ChatGroq
 from dotenv import load_dotenv
@@ -8,16 +9,21 @@ from apps.llm.agents.content_agents_v2 import TOOLS
 
 load_dotenv()
 
+api_keys= [
+    os.environ.get("GROQ_API_KEY"),
+    os.environ.get("GROQ_API_KEY_2"),
+    os.environ.get("GROQ_API_KEY_3"),
+    os.environ.get("GROQ_API_KEY_4"),
+    os.environ.get("GROQ_API_KEY_5"),
+    os.environ.get("GROQ_API_KEY_6"),
+]
 
-groq_api = os.environ.get("GROQ_API_KEY")
-# groq_api = os.environ.get("GROQ_API_KEY_2")
-# groq_api = os.environ.get("GROQ_API_KEY_3")
-# groq_api = os.environ.get("GROQ_API_KEY_4")
-# groq_api = os.environ.get("GROQ_API_KEY_5")
-# groq_api = os.environ.get("GROQ_API_KEY_6")
+groq_api = itertools.cycle(api_keys)
 
 
-llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0, api_key=groq_api) #Asosiy
+
+
+llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0, api_key=next(groq_api))
 llm_with_tools = llm.bind_tools(TOOLS)
 
 
@@ -46,3 +52,4 @@ def route_command(text: str, max_retries=2) -> dict:
                 continue
             raise
 
+    return {"message": "Sorry not response!"}
