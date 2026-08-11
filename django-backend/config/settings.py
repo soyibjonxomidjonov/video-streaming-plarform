@@ -53,12 +53,14 @@ INSTALLED_APPS = [
     'apps.main',
     'apps.dashboard_video',
 
-    #     Rest framework o'rnatilgan
+    #Rest framework o'rnatilgan
     'rest_framework',
     'drf_yasg',
     'rest_framework_simplejwt',
     'djoser',
     'django_filters',
+
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -260,3 +262,13 @@ CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND") #Redis yoki bosh
 
 # GO_STREAMER_BASE_URL = os.environ.get("GO_STREAMER_BASE_URL", "http://go-streamer:8081")
 GO_STREAMER_BASE_URL="http://16.170.242.253:8081"
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+]
+CORS_ALLOW_CREDENTIALS = True

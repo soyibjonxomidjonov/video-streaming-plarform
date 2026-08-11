@@ -1,50 +1,257 @@
-🚀 Ultra-Optimized Video Streaming Architecture SpecificationUshbu arxitektura minimal apparat resurslari (1 vCPU, 1–4 GB RAM) bilan maksimal tarmoq unumdorligiga erishish va 200+ parallel tomoshabinga 720p HD formatdagi videolarni uzatish uchun mo‘ljallangan.1. 🏗 Tizim Arxitekturasi (System Overview)Tizim modulli mikroservislar va yuklamani to‘g‘ri taqsimlash tamoyiliga asoslangan:Django REST Framework (Backend Core):Foydalanuvchilar va autentifikatsiya (Auth/JWT).Ma’lumotlar bazasi (PostgreSQL / pgvector), qidiruv va biznes mantiq.UzbekVoiceAI, LLM va botlar bilan integratsiya.Video oqimlariga havola tayyorlab berish (Go mikroservisiga yo‘naltirish).Go / Golang (Streamer Microservice):Video oqimini (Chunk-by-Chunk Streaming) uzatish.Minimal RAM sarfi bilan gigabaytlab ma’lumotlarni o‘tkazish (io.TeeReader va io.Copy).Local Telegram Bot API va lokal SSD kesh bilan to‘g‘ridan-to‘g‘ri ishlash.Local Telegram Bot API Server:Telegram’dan 2 GB gacha bo‘lgan media fayllarni tezkor yuklab olish.--local bayrog‘i orqali Docker Volume'ga fayllarni saqlash va Go’ga to‘g‘ridan-to‘g‘ri kirish huquqini berish.Infrastruktura (Server & Network):Tavsiya etilgan Server: Hetzner Cloud (CX22 / CX32).Tarmoq (Bandwidth): 1 Gbps kafolatlangan port + 20 TB tekin trafik/oy.OS Sozlamalari: 6 GB SWAP, vm.swappiness = 10.2. 🔄 Video Oqimi va Kesh Mantiqi (Data Flow)Videoni uzatish Nol Kutish (Zero Latency) tamoyilida ishlaydi:Plaintext[User Browser/App] <--- (HTTP Stream) ---> [Go Streamer]
-                                               |
-                                     +---------+---------+
-                                     |                   |
-                           (1. Live Stream)     (2. Local Cache Write)
-                                     |                   |
-                       [Local Telegram Bot API] ----> [SSD Disk Storage]
-So‘rov kelsa: User pleyeridan Go mikroservisiga file_id keladi.Keshni tekshirish:Hot (SSD’da bor): Go faylni darhol SSD diskdan stream qiladi (Telegram’ga so‘rov ketmaydi).Cold (SSD’da yo‘q): Go Local Telegram Bot API orqali Telegram’dan faylni tortadi.Chunked Streaming (io.TeeReader):Telegram’dan kelayotgan birinchi 32 KB ma'lumot olinishi bilanoq darhol foydalanuvchiga uzatiladi (User videoni o‘sha soniyada ko‘radi).Bir vaqtning o‘zida ushbu oqim SSD diskka saqlanib boriladi.RAM sarfi: Streaming jarayonida Go’da xotira sarfi har bir ulanish uchun bor-yo‘g‘i ~100 KB – 500 KB ni tashkil etadi.3. ⚙️ Server va OS OptimallashtiruviA. Linux Swappiness BalansiRAM to‘lganida server qotib qolmasligi va SSD disk ortiqcha yeyilmasligi uchun:Bash# Vaqtincha qo'llash
-sudo sysctl vm.swappiness=10
+# Premium Video Streaming Platform — Full Frontend Implementation Plan
 
-# Doimiy (Permanent) saqlash
-echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf
-B. Rate Limiting (Concurrency Limit)O‘ta yuqori yuklamalarda Telegram IP-block berishi va tarmoq kanali to‘lib qolmasligi uchun Go ichida parallel yuklash chegaralanadi:Go// Parallel Telegram yuklamalarini 20-30 tagacha cheklash
-var telegramLimiter = make(chan struct{}, 20)
+## Background
 
-func StreamFromTelegram(file_id string) {
-    telegramLimiter <- struct{}{}
-    defer func() { <-telegramLimiter }()
+Video streaming platform with Django backend (JWT auth + DRF), Go Streamer (Telegram→CDN pipeline), Django Channels WebSocket (AI voice agent), and Mohir.ai STT.
 
-    // Telegram Fetch + Stream logic
-}
-4. 📊 Unumdorlik va Imkoniyatlar (Metrics & Capacity)Hetzner CX22 ($5–7/oy) serveri uchun hisoblangan texnik ko‘rsatkichlar:Ko‘rsatkichBirlik / QiymatIzohServer Resursi2 vCPU, 4 GB RAMLinux + Docker + Django + Go + Bot APITarmoq Porti1 Gbps (1,000 Mbps)Asosiy tor bo‘g‘iz (bottleneck)Max Parallel Streaming (720p HD)200 – 260 ta foydalanuvchi~$800 \text{ Mbps} / 3 \text{ Mbps/user}$RAM Ishlatilishi (Go Streamer)~100 MB RAM200 ta parallel streaming vaqtidaOylik Trafik Sig‘imi20 Terabayt~16,600 soat 720p HD video ijrosi5. 🛠 Docker Integration Example (docker-compose.yml)YAMLversion: '3.8'
+Audit qilingan backend API haqiqiy URL'lari:
+- Auth: `POST /v1/auth/login/` → `POST /v1/auth/code/verify/` → register / Google OAuth  
+- JWT refresh: `POST /v1/auth/token/refresh/`
+- Movies: `GET/POST/PATCH/DELETE /v1/movie/` (filterset: title, genre, duration, ordering)
+- Movie stream: `GET /v1/movie/{id}/stream/` → 302 → Go Streamer
+- Series: `/v1/series/`, Episodes: `/v1/episode/`
+- Episode stream: `GET /v1/episode/{id}/stream/`
+- Genres: `/v1/genre/`
+- Comments: `/v1/movie-comments/`, `/v1/series-comments/`
+- Ratings: `/v1/movie-rating/`, `/v1/series-rating/`
+- Favorites: `/v1/movie-favourite/`, `/v1/series-favourite/`
+- Watch Progress (Movie): `/v1/movie-watchprogress/`
+- Watch Progress (Episode): `/v1/series-watchprogress/`
+- Semantic search: `/v1/embedding_search/`
+- Users (admin): `/v1/users/`
+- WebSocket: `ws://host/ws/agent/`
+- Swagger: `/` (base URL)
 
-services:
-  telegram-bot-api:
-    image: aiogram/telegram-bot-api:latest
-    environment:
-      TELEGRAM_API_ID: "${TELEGRAM_API_ID}"
-      TELEGRAM_API_HASH: "${TELEGRAM_API_HASH}"
-    command: ["--local"]
-    volumes:
-      - telegram-bot-api-data:/var/lib/telegram-bot-api
+Auth: **JWT** (Bearer token) — `Authorization: Bearer <access>` header orqali. Session-based emas.
 
-  go-streamer:
-    build: ./go-streamer
-    ports:
-      - "8080:8080"
-    environment:
-      - BOT_TOKEN=${BOT_TOKEN}
-      - BOT_API_URL=http://telegram-bot-api:8081
-    deploy:
-      resources:
-        limits:
-          memory: 250M
-    volumes:
-      - telegram-bot-api-data:/var/lib/telegram-bot-api:ro
+---
 
-volumes:
-  telegram-bot-api-data:
-💡 XulosaUshbu arxitektura minimum xarajat ($0–$7/oy) bilan maksimal samaradorlikni beradi. Tizim tarmoq kanalini to‘liq nazorat qiladi va xotira tugashi (OOM Crash) xavfini 0% ga tushiradi.
+## Architecture Decision
+
+**Framework:** Next.js 15 (App Router) — SSR/SSG, route protection, TypeScript, file-based routing — bu loyiha uchun optimal.
+
+**Reason:** Vanilla HTML/JS bilan 58-funksiyali voice dispatcher, WebSocket, JWT token refresh, admin panel va protected routes boshqarish juda murakkab va maintenance-nightmare bo'ladi. Next.js bu muammolarni hal qiladi.
+
+**Styling:** Vanilla CSS (CSS Modules + CSS Variables design tokens). TailwindCSS yo'q.
+
+**State:** Zustand (server state: API fetch + manual cache; client state: player, voice overlay, auth)
+
+**Package Manager:** npm
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> Mohir.ai API key frontend-dan to'g'ridan-to'g'ri chaqiriladi (FRONTEND_GUIDE.md da ko'rsatilgan). Bu `.env.local`da `NEXT_PUBLIC_MOHIR_API_KEY` sifatida saqlanadi. Production'da server-side proxy orqali o'tkazish tavsiya etiladi.
+
+> [!WARNING]
+> Backend JWT — `access` + `refresh` token qaytaradi. Frontend localStorage'da saqlaydi, 401 bo'lganda auto-refresh qiladi.
+
+---
+
+## Proposed Changes
+
+### Phase 1 — Project Scaffold
+
+#### [NEW] `frontend/` — Next.js 15 app
+
+```
+frontend/
+├── public/
+├── src/
+│   ├── app/                    # Next.js App Router pages
+│   │   ├── layout.tsx          # Root layout
+│   │   ├── page.tsx            # Home
+│   │   ├── login/page.tsx
+│   │   ├── register/page.tsx
+│   │   ├── movies/
+│   │   │   ├── page.tsx        # Movies list
+│   │   │   └── [id]/page.tsx   # Movie detail + player
+│   │   ├── series/
+│   │   │   ├── page.tsx        # Series list
+│   │   │   └── [id]/
+│   │   │       ├── page.tsx    # Series detail
+│   │   │       └── episode/[epId]/page.tsx  # Episode player
+│   │   ├── search/page.tsx
+│   │   ├── genres/
+│   │   │   └── [name]/page.tsx
+│   │   ├── favorites/page.tsx
+│   │   ├── history/page.tsx
+│   │   ├── profile/page.tsx
+│   │   └── admin/             # Hidden admin panel
+│   │       ├── layout.tsx
+│   │       ├── page.tsx        # Admin dashboard
+│   │       ├── movies/page.tsx
+│   │       ├── series/page.tsx
+│   │       ├── episodes/page.tsx
+│   │       ├── genres/page.tsx
+│   │       ├── users/page.tsx
+│   │       ├── comments/page.tsx
+│   │       └── ratings/page.tsx
+│   ├── components/
+│   │   ├── design-system/      # Atomic design tokens + base components
+│   │   │   ├── Button/
+│   │   │   ├── Card/
+│   │   │   ├── Input/
+│   │   │   ├── Modal/
+│   │   │   ├── Skeleton/
+│   │   │   └── Toast/
+│   │   ├── layout/
+│   │   │   ├── Navbar/
+│   │   │   ├── Sidebar/
+│   │   │   └── BottomNav/
+│   │   ├── content/
+│   │   │   ├── ContentCard/
+│   │   │   ├── ContentRow/     # Horizontal scroll section
+│   │   │   ├── HeroSection/
+│   │   │   └── GenreTag/
+│   │   ├── player/
+│   │   │   ├── VideoPlayer/    # data-role="main-player"
+│   │   │   ├── PlayerControls/
+│   │   │   └── EpisodeList/
+│   │   ├── voice/
+│   │   │   ├── VoiceOverlay/   # 4-state overlay
+│   │   │   ├── VoiceOrb/
+│   │   │   └── VoiceButton/
+│   │   └── admin/
+│   │       ├── DataTable/
+│   │       ├── AdminForm/
+│   │       └── StatsCard/
+│   ├── services/               # API abstraction layer
+│   │   ├── api-client.ts       # Centralized fetch + JWT + CSRF
+│   │   ├── auth.service.ts
+│   │   ├── movies.service.ts
+│   │   ├── series.service.ts
+│   │   ├── genres.service.ts
+│   │   ├── favorites.service.ts
+│   │   ├── watchprogress.service.ts
+│   │   ├── comments.service.ts
+│   │   ├── ratings.service.ts
+│   │   ├── search.service.ts
+│   │   └── admin.service.ts
+│   ├── voice/                  # Complete voice architecture
+│   │   ├── AgentSocket.ts      # WebSocket with reconnect/backoff
+│   │   ├── VoiceInput.ts       # MediaRecorder + VAD + Mohir.ai STT
+│   │   ├── normalizer.ts       # Uzbek STT normalization pipeline
+│   │   ├── fastPath.ts         # Layer 0 — keyword matcher (58 rules)
+│   │   ├── dispatcher.ts       # Central tool dispatcher
+│   │   ├── playbackHandlers.ts # 34 frontend-only tools
+│   │   ├── apiHandlers.ts      # 24 backend LLM tools
+│   │   ├── confirmation.ts     # Dangerous action confirmation
+│   │   └── tts.ts              # Web Speech API TTS
+│   ├── store/                  # Zustand stores
+│   │   ├── auth.store.ts
+│   │   ├── player.store.ts
+│   │   ├── voice.store.ts
+│   │   └── ui.store.ts
+│   ├── hooks/
+│   │   ├── useAuth.ts
+│   │   ├── useMovies.ts
+│   │   ├── useSeries.ts
+│   │   ├── useVoice.ts
+│   │   └── useWatchProgress.ts
+│   ├── config/
+│   │   └── env.ts              # ALL env vars — single source of truth
+│   └── styles/
+│       ├── globals.css         # Design tokens (CSS variables)
+│       ├── tokens.css          # Typography, spacing, colors, radius
+│       └── animations.css      # Motion system
+├── .env.local                  # Environment variables
+├── next.config.ts
+└── package.json
+```
+
+---
+
+### Phase 2 — Design System
+
+**Color Palette** (premium dark media platform):
+- Background: `#0a0a0f` (near-black, warm undertone)
+- Surface 1: `#111118`
+- Surface 2: `#1a1a24`
+- Border: `rgba(255,255,255,0.08)`
+- Accent: `#6c63ff` (electric violet — Netflix/Prime-style)
+- Accent hover: `#8b83ff`
+- Gold (ratings): `#f5c518`
+- Success: `#22c55e`
+- Error: `#ef4444`
+- Text Primary: `#f0f0f8`
+- Text Secondary: `#9999b0`
+- Text Muted: `#5a5a78`
+
+**Typography:** `Outfit` (display/headings) + `Inter` (body/UI) — Google Fonts
+
+**Spacing:** 4px base — `4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96`
+
+**Radius:** `4, 8, 12, 16, 24, full`
+
+**Motion:** 150ms micro, 250ms standard, 350ms page/modal
+
+---
+
+### Phase 3 — Environment Config
+
+```typescript
+// src/config/env.ts — SINGLE SOURCE OF TRUTH
+export const ENV = {
+  API_BASE: process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000',
+  WS_BASE: process.env.NEXT_PUBLIC_WS_BASE || 'ws://localhost:8000',
+  MOHIR_API_KEY: process.env.NEXT_PUBLIC_MOHIR_API_KEY || '',
+  APP_ENV: process.env.NEXT_PUBLIC_APP_ENV || 'development',
+};
+```
+
+---
+
+### Phase 4 — API Client
+
+JWT token:
+- `localStorage.getItem('access_token')` → `Authorization: Bearer <token>` header
+- 401 → auto-refresh via `/v1/auth/token/refresh/` → retry
+- Refresh fail → logout → redirect `/login`
+
+Pagination: backend `page_size=5` → frontend pagination component
+
+---
+
+### Phase 5 — Voice Architecture
+
+Documented pipeline preserved exactly:
+```
+Microphone → MediaRecorder → VAD (silence detection)
+→ Mohir.ai STT (direct from frontend, uz language)
+→ normalizeUzbekSTT() (5-stage pipeline)
+→ tryFastPath() (VIDEO_ACTION_RULES + NON_VIDEO_KEYWORD_PATTERNS)
+  → Match? → executeToolWithConfirmation()
+  → No match? → AgentSocket.send() → WebSocket → LLM
+→ tool_call response → Central Dispatcher
+→ PLAYBACK_HANDLERS (DOM) | API_HANDLERS (fetch)
+→ TTS (speak result)
+→ VoiceOverlay state update (idle/listening/thinking/speaking)
+```
+
+---
+
+### Phase 6 — Admin Panel
+
+Route: `/admin` — protected by `is_staff: true` check
+Admin auth: same JWT, but checks `is_staff` field
+All CRUD tables use backend real endpoints with filter/search/pagination
+
+---
+
+## Verification Plan
+
+### Automated
+- `npm run build` — TypeScript compilation check
+- No mock/fake data anywhere
+
+### Manual
+- Auth flow: register → email code → verify → JWT stored → protected pages work
+- Movie list, filter by genre, search
+- Movie detail → stream URL → video plays → seek works
+- Voice: mic permission → listening state → say "to'xtat" → video pauses
+- WebSocket → LLM → tool_call → API action
+- Admin: `/admin` accessible only for staff, full CRUD
+- Mobile: bottom nav, touch targets ≥44px, player controls

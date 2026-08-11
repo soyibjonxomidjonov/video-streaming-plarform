@@ -1,0 +1,2127 @@
+bu loyihada django-backendni ichida frontend-complate-final.md fayli bor uni to'liq ravish da o'qib chiq va qolgan fayllarni ham lekin men aytgan final fayli oxirgi qaror bo'lgan sen ko'rishing mumkun meni backendagi viewlarimni va serailizerlarimni bu frontenddagi lar uchun kerak bo'ladi va men to'liq ravishda filterlarni va search tzimlarni ham qurib chiqqanman ularni ham to'liq ko'rib chiq maksimalni ishlatishga harakat qil endi senga asosiy prompt # MASTER FRONTEND ENGINEERING PROMPT
+
+## Premium Video Streaming Platform + Voice AI + Hidden Admin Panel
+
+You are acting as a **principal frontend architect, senior product engineer, senior UI/UX designer, design-system architect, frontend performance engineer, and integration engineer**.
+
+Your task is to build a **production-grade, scalable, premium video streaming frontend** based on the project documentation, backend API contracts, frontend architecture documentation, and repository structure provided to you.
+
+This is NOT a simple UI implementation task.
+
+You must think and work like an experienced engineering team building a real commercial product that will continue evolving for years.
+
+---
+
+# 1. PRIMARY OBJECTIVE
+
+Build the complete frontend for a modern video streaming platform with:
+
+1. Premium, high-end UI/UX
+2. Complete video streaming functionality
+3. Professional video player
+4. Search and discovery
+5. Movies
+6. Series
+7. Episodes
+8. Genres
+9. Recommendations
+10. Trending/new releases
+11. Favorites
+12. Watch history
+13. Continue watching
+14. Ratings
+15. Comments
+16. User account functionality
+17. Authentication
+18. Voice-controlled interaction
+19. Speech-to-Text integration
+20. WebSocket AI agent integration
+21. Text-to-Speech integration
+22. Central frontend voice dispatcher
+23. Responsive mobile/tablet/desktop experience
+24. Professional hidden admin panel
+25. Full admin CRUD where supported by the backend
+26. Future-proof infrastructure/configuration
+27. Strong error handling
+28. Production-level performance
+29. Maintainable architecture
+30. Extensibility for future features
+
+The final result must feel like a **serious premium media product**, not a generic template, demo, dashboard, or AI-generated prototype.
+
+---
+
+# 2. MOST IMPORTANT PRIORITY RULE
+
+There are TWO equally important dimensions.
+
+## PRIORITY A — FUNCTIONALITY
+
+Core functionality must never be sacrificed.
+
+The following must remain fully functional:
+
+* API integration
+* authentication
+* authorization
+* video streaming
+* video playback
+* seeking
+* volume
+* fullscreen
+* PiP
+* theater mode
+* playback speed
+* captions where supported
+* episode navigation
+* search
+* filtering
+* sorting
+* recommendations
+* favorites
+* watch progress
+* watch history
+* continue watching
+* ratings
+* comments
+* sharing
+* reporting
+* profile/account
+* WebSocket
+* voice control
+* STT
+* TTS
+* LLM tool calls
+* frontend-only voice commands
+* confirmation flow
+* clarification flow
+* error handling
+* reconnect logic
+
+## PRIORITY B — PREMIUM UI/UX
+
+The product must simultaneously have extremely high-quality:
+
+* visual hierarchy
+* typography
+* spacing
+* composition
+* responsive behavior
+* interaction design
+* animation
+* transitions
+* micro-interactions
+* accessibility
+* visual feedback
+* loading states
+* empty states
+* error states
+* hover states
+* focus states
+* active states
+* mobile ergonomics
+* video browsing experience
+* player experience
+* voice interaction experience
+
+DO NOT simplify the design merely because implementation is difficult.
+
+DO NOT simplify functionality merely because a visual implementation is difficult.
+
+Solve both problems professionally.
+
+---
+
+# 3. FIRST ACTION — AUDIT BEFORE CODING
+
+Before writing or modifying code:
+
+### Inspect the entire repository.
+
+Understand:
+
+* current frontend framework
+* package manager
+* build system
+* existing dependencies
+* existing components
+* routing
+* state management
+* API clients
+* utilities
+* styles
+* assets
+* environment files
+* existing authentication
+* existing API integration
+* existing player implementation
+* existing WebSocket implementation
+* existing voice-related code
+* existing admin code
+* naming conventions
+* folder structure
+* TypeScript configuration if applicable
+* linting
+* formatting
+* testing
+* build scripts
+
+Also inspect all provided project documentation.
+
+Especially:
+
+* `frontend-complete-final.md`
+* backend API documentation
+* OpenAPI/API contracts
+* frontend architecture documentation
+* streaming documentation
+* voice-control documentation
+* any design/reference documentation
+
+Do not assume that the repository is empty.
+
+Do not rebuild existing working functionality unnecessarily.
+
+Do not replace the project's technology stack without a strong technical reason.
+
+---
+
+# 4. SOURCE OF TRUTH RULE
+
+The provided project documentation and actual backend API contracts are the source of truth.
+
+Do not invent:
+
+* endpoints
+* request bodies
+* response fields
+* authentication mechanisms
+* database fields
+* permissions
+* streaming URLs
+* WebSocket message formats
+
+If something is unclear:
+
+1. Inspect the repository.
+2. Inspect the provided API documentation.
+3. Inspect existing implementation.
+4. Infer only when strongly supported.
+5. Keep the implementation isolated so it can be changed later.
+
+Never silently invent backend behavior.
+
+---
+
+# 5. DO NOT MODIFY BACKEND
+
+This is a FRONTEND task.
+
+Do not modify:
+
+* Django backend
+* Go streamer
+* database
+* backend business logic
+* backend routes
+* backend authentication logic
+* backend WebSocket implementation
+
+unless the user explicitly instructs you to do so.
+
+The frontend must adapt to the existing backend contracts.
+
+If you discover a backend limitation:
+
+* do not hack around it destructively;
+* isolate the limitation;
+* provide graceful frontend behavior;
+* keep the architecture ready for future backend improvements.
+
+---
+
+# 6. FUTURE-PROOF INFRASTRUCTURE
+
+The site will likely change in the future.
+
+The following may change:
+
+* main domain
+* API domain
+* WebSocket domain
+* staging domain
+* production domain
+* CDN
+* streaming infrastructure
+* API version
+* authentication endpoint
+* deployment environment
+
+Therefore:
+
+## NEVER hardcode infrastructure URLs throughout components.
+
+Bad:
+
+```text
+https://example.com/api/...
+wss://example.com/ws/...
+http://123.123.123.123:8080/...
+```
+
+inside random components.
+
+Instead create a centralized configuration architecture.
+
+Conceptually:
+
+```text
+Environment / Runtime Configuration
+            ↓
+       Configuration Layer
+            ↓
+       API Client Layer
+            ↓
+      Feature Service Layer
+            ↓
+        State Layer
+            ↓
+      UI / Components
+```
+
+All environment-specific values must have a single source of truth.
+
+Examples:
+
+```text
+API_BASE_URL
+WS_BASE_URL
+STREAM_BASE_URL
+APP_ENV
+```
+
+Use the project's existing environment/configuration mechanism when available.
+
+If the backend domain changes, changing configuration should be sufficient wherever technically possible.
+
+Do not force a developer to search the entire repository for old domains.
+
+---
+
+# 7. API ARCHITECTURE
+
+Create a clean API abstraction.
+
+Do not call raw `fetch()` or equivalent directly from dozens of UI components.
+
+Use:
+
+```text
+API Client
+    ↓
+Feature Services
+    ↓
+Hooks / State
+    ↓
+Components
+```
+
+For example:
+
+```text
+services/
+  auth/
+  movies/
+  series/
+  episodes/
+  genres/
+  search/
+  favorites/
+  history/
+  ratings/
+  comments/
+  recommendations/
+  users/
+  admin/
+  streaming/
+  voice/
+```
+
+Adapt this to the existing project architecture rather than blindly creating folders.
+
+Centralize:
+
+* authentication headers
+* CSRF handling where required
+* error normalization
+* 401 handling
+* request cancellation
+* timeout behavior where appropriate
+* response parsing
+* API versioning
+* retry behavior where appropriate
+
+---
+
+# 8. DESIGN SYSTEM — BUILD THIS BEFORE RANDOM UI
+
+The platform must have a coherent design system.
+
+Do not design every page independently.
+
+Create reusable design primitives for:
+
+### Typography
+
+Define:
+
+* display typography
+* headings
+* body
+* captions
+* metadata
+* labels
+* buttons
+* navigation text
+
+### Spacing
+
+Create consistent spacing tokens.
+
+### Radius
+
+Use a consistent radius system.
+
+### Shadows
+
+Use a controlled elevation system.
+
+### Motion
+
+Define:
+
+* duration
+* easing
+* hover transitions
+* page transitions
+* modal transitions
+* card interactions
+* player transitions
+* voice animations
+
+### Colors
+
+Create a coherent visual palette appropriate for a premium video platform.
+
+Do not randomly select colors on individual components.
+
+### Breakpoints
+
+Create a responsive strategy rather than fixing individual pages one by one.
+
+---
+
+# 9. PREMIUM VIDEO PLATFORM VISUAL DIRECTION
+
+The product must feel like a **premium media platform**.
+
+Avoid:
+
+* generic Bootstrap-like layouts
+* generic dashboard aesthetics
+* excessive cards
+* excessive borders
+* inconsistent gradients
+* random shadows
+* excessive rounded corners
+* childish animations
+* unnecessary visual noise
+* template-like UI
+* excessive icons
+* poor typography
+* overcrowded screens
+
+Aim for:
+
+* cinematic presentation
+* strong visual hierarchy
+* immersive content discovery
+* high-quality poster presentation
+* strong hero sections where appropriate
+* elegant metadata
+* clear actions
+* restrained motion
+* polished controls
+* excellent whitespace
+* consistent visual language
+
+The UI must feel intentional.
+
+Every visual element must have a reason.
+
+---
+
+# 10. RESPONSIVE DESIGN
+
+The frontend must be genuinely responsive.
+
+Support:
+
+* desktop
+* laptop
+* tablet
+* mobile
+
+Do not simply shrink desktop UI.
+
+Mobile must have its own interaction strategy.
+
+Pay special attention to:
+
+* bottom navigation
+* touch targets
+* player controls
+* search
+* cards
+* horizontal carousels
+* modals
+* drawers
+* voice overlay
+* admin panel
+* forms
+* tables
+* pagination
+* filters
+
+Avoid horizontal overflow unless intentionally designed.
+
+---
+
+# 11. CORE PRODUCT PAGES
+
+Build all required user-facing pages based on the actual API and project documentation.
+
+At minimum, architecture must support:
+
+```text
+Home
+Search
+Search Results
+Movie Details
+Series Details
+Episode
+Video Player
+Genres
+Trending
+New Releases
+Recommendations
+Favorites
+Continue Watching
+Watch History
+Profile
+Authentication
+Account Settings
+```
+
+Add other pages only when supported by the project requirements/API.
+
+Each page must include:
+
+* loading state
+* empty state
+* error state
+* success feedback where appropriate
+* responsive state
+* authentication-aware behavior where required
+
+---
+
+# 12. HOME PAGE
+
+The home page should feel like the main entrance to a premium streaming product.
+
+Possible sections based on available backend data:
+
+* hero/content spotlight
+* continue watching
+* trending
+* new releases
+* recommended
+* genres
+* popular content
+* recently added
+
+Do not make every section visually identical.
+
+Create visual hierarchy.
+
+The first viewport should communicate the product immediately.
+
+---
+
+# 13. SEARCH EXPERIENCE
+
+Search must feel fast and polished.
+
+Support where backend permits:
+
+* search
+* genre filtering
+* sorting
+* recommendations
+* trending
+* new releases
+* result selection
+
+Handle:
+
+* empty query
+* no results
+* loading
+* API failure
+* special characters
+* slow network
+* rapid query changes
+* duplicate requests
+
+Encode search parameters correctly.
+
+Preserve useful search state where required.
+
+---
+
+# 14. VIDEO PLAYER
+
+The player is one of the most important components of the product.
+
+It must support the documented functionality.
+
+The active player must remain identifiable using:
+
+```html
+data-role="main-player"
+```
+
+or the framework-equivalent mechanism.
+
+The voice system must always know which player it should control.
+
+Support where backend/browser capabilities allow:
+
+* play
+* pause
+* seek forward
+* seek backward
+* seek to time
+* volume
+* mute
+* fullscreen
+* PiP
+* captions
+* theater mode
+* playback speed
+* restart
+* next episode
+* previous episode
+* close player
+
+Do not create a fragile custom video engine when native browser functionality is sufficient.
+
+---
+
+# 15. STREAMING ERROR HANDLING
+
+Respect the documented streaming behavior.
+
+Expected frontend behavior:
+
+```text
+400 → log / controlled error
+404 → video unavailable message
+416 → reload video
+502/503 → retry once after approximately 1.5s, then show error
+```
+
+Do not create infinite retries.
+
+Do not hide persistent streaming failures.
+
+The user must understand what happened.
+
+Use graceful recovery.
+
+---
+
+# 16. VIDEO PLAYER PERFORMANCE
+
+Do not unnecessarily load multiple videos.
+
+Avoid:
+
+* unnecessary autoplay
+* duplicate streams
+* memory leaks
+* excessive event listeners
+* unnecessary re-renders
+* uncontrolled timers
+* orphaned WebSocket connections
+
+Only the active player should receive playback commands.
+
+---
+
+# 17. VOICE CONTROL IS A FIRST-CLASS PRODUCT FEATURE
+
+Voice control is NOT an optional visual gimmick.
+
+It is a core interaction layer.
+
+Do not remove, simplify, disable, or hide it merely to make the frontend easier to implement.
+
+The voice architecture must remain compatible with the documented pipeline:
+
+```text
+STT
+ ↓
+Normalization
+ ↓
+Fast Path
+ ↓
+WebSocket
+ ↓
+LLM
+ ↓
+Tool Call
+ ↓
+Frontend Dispatcher
+ ↓
+Action
+ ↓
+TTS
+```
+
+---
+
+# 18. STT / UZBEK VOICE SUPPORT
+
+The project uses the documented:
+
+```text
+single STT
++
+local normalization
++
+rule-based matching
++
+LLM fallback
+```
+
+architecture.
+
+Preserve this approach.
+
+Do not unnecessarily introduce parallel STT providers.
+
+The normalization layer must support the documented Uzbek speech characteristics and code-switching behavior.
+
+The system must be designed for Uzbek speech that may contain:
+
+* Uzbek
+* Russian
+* English
+* mixed Uzbek/Russian
+* mixed Uzbek/English
+* STT spelling errors
+* apostrophe variants
+* Cyrillic output where applicable
+
+Preserve the documented normalization and matching architecture.
+
+Do not remove negative/negation detection.
+
+Do not remove semantic exclusion protection.
+
+Do not make every vaguely matching sentence execute a command.
+
+---
+
+# 19. VOICE SAFETY / CONFIRMATION
+
+Commands with documented confirmation requirements must not execute blindly.
+
+The architecture must distinguish:
+
+```text
+SAFE_MATCH
+CONFIRM_REQUIRED
+AMBIGUOUS
+UNKNOWN
+```
+
+Where confirmation is required:
+
+1. show confirmation UI;
+2. clearly communicate the intended action;
+3. wait for user confirmation;
+4. execute only after confirmation.
+
+Never interpret an ambiguous command as a destructive or irreversible action.
+
+---
+
+# 20. VOICE OVERLAY
+
+Create a premium voice interaction overlay.
+
+The documented four-state model must remain:
+
+```text
+idle
+listening
+thinking
+speaking
+```
+
+### idle
+
+Overlay hidden.
+
+### listening
+
+* microphone active
+* orb visibly reacts
+* clear listening state
+* user understands that the system is listening
+
+### thinking
+
+* visually distinct processing state
+* subtle animated orb
+* clear status
+
+### speaking
+
+* TTS active
+* orb reacts to speech where possible
+* AI response caption visible
+
+The overlay should be visually premium but must remain functional and understandable.
+
+Do not make animations so heavy that they reduce performance.
+
+---
+
+# 21. VOICE OVERLAY UX
+
+Use the documented visual concept:
+
+* central listening orb
+* subtle scrim
+* caption
+* microphone control
+* close/stop control
+* optional history/control area if appropriate
+
+However, adapt the design to the actual product.
+
+Do not blindly copy a screenshot.
+
+Create a product-native implementation.
+
+The overlay must work beautifully on:
+
+* desktop
+* tablet
+* mobile
+
+---
+
+# 22. WEBSOCKET ARCHITECTURE
+
+Preserve the documented message contract.
+
+Frontend → backend should support the documented structure conceptually:
+
+```json
+{
+  "type": "user_command",
+  "text": "...",
+  "session_id": "...",
+  "frontend_state": {}
+}
+```
+
+Backend → frontend may return:
+
+```json
+{
+  "type": "tool_call",
+  "tool": "...",
+  "params": {},
+  "speak": "..."
+}
+```
+
+or:
+
+```json
+{
+  "type": "clarify",
+  "question": "...",
+  "awaiting": "..."
+}
+```
+
+Do not invent a different protocol.
+
+Build the WebSocket layer as an isolated service.
+
+It must support:
+
+* connection state
+* connecting
+* connected
+* disconnected
+* reconnecting
+* failed
+* retry/backoff
+* session ID
+* message queue where appropriate
+* cleanup
+* component unmount handling
+
+Never create multiple uncontrolled WebSocket connections.
+
+---
+
+# 23. CENTRAL VOICE DISPATCHER
+
+All voice actions must go through a central dispatcher.
+
+Conceptually:
+
+```text
+Voice Event
+    ↓
+Tool Validation
+    ↓
+Confirmation Check
+    ↓
+Dispatcher
+    ↓
+Frontend Handler OR API Service
+    ↓
+UI State Update
+```
+
+Do not scatter voice command logic across random components.
+
+This is especially important for player commands.
+
+The dispatcher must be capable of identifying the active player safely.
+
+---
+
+# 24. COMPLETE VOICE TOOL COVERAGE
+
+Preserve the documented 58-function architecture.
+
+### Playback
+
+```text
+pause_video
+play_video
+seek_forward
+seek_backward
+seek_to_time
+set_volume
+increase_volume
+decrease_volume
+mute
+unmute
+toggle_fullscreen
+enter_fullscreen
+exit_fullscreen
+toggle_picture_in_picture
+exit_picture_in_picture
+toggle_captions
+enable_captions
+disable_captions
+toggle_theater_mode
+close_player
+set_playback_speed
+restart_episode
+next_episode
+previous_episode
+```
+
+### Navigation
+
+```text
+scroll_down
+scroll_up
+scroll_to_top
+scroll_to_bottom
+go_back
+refresh_page
+go_home
+open_favorites_page
+open_search_page
+open_profile_page
+stop_listening
+```
+
+### Search / discovery
+
+```text
+search_content
+select_search_result
+filter_by_genre
+show_trending
+show_new_releases
+get_recommendations
+sort_content
+```
+
+### Content
+
+```text
+open_content
+show_content_details
+list_episodes
+```
+
+### Favorites
+
+```text
+add_to_favorites
+remove_from_favorites
+show_favorites
+```
+
+### Watch progress
+
+```text
+resume_watching
+show_continue_watching
+show_watch_history
+mark_as_watched
+remove_from_continue_watching
+clear_watch_history
+```
+
+### Rating / comments
+
+```text
+rate_content
+add_comment
+show_comments
+delete_comment
+```
+
+### Sharing / reporting
+
+```text
+share_content
+report_problem
+```
+
+### Account
+
+```text
+check_login_status
+logout
+```
+
+Do not silently remove commands because they are inconvenient.
+
+If a backend endpoint does not currently support a function, isolate that capability rather than corrupting the architecture.
+
+---
+
+# 25. FRONTEND-ONLY VS BACKEND TOOL SEPARATION
+
+Maintain a clear distinction between:
+
+### Frontend-only operations
+
+Examples:
+
+* play
+* pause
+* seek
+* volume
+* fullscreen
+* PiP
+* theater mode
+* navigation
+* stop listening
+
+and:
+
+### Backend/LLM/API operations
+
+Examples:
+
+* search
+* recommendations
+* favorites
+* ratings
+* comments
+* history
+* content lookup
+* account operations
+
+Do not send frontend-only actions unnecessarily through the backend.
+
+Do not execute backend-required operations purely in the frontend.
+
+---
+
+# 26. TTS
+
+TTS must integrate with the voice state machine.
+
+Conceptually:
+
+```text
+TTS start
+→ speaking
+
+TTS end
+→ listening / idle depending on current session
+```
+
+Respect the documented TTS enable/disable behavior.
+
+The user must be able to disable TTS where required.
+
+Prevent overlapping speech.
+
+Cancel previous speech before starting a new response when appropriate.
+
+---
+
+# 27. AUTHENTICATION
+
+Build authentication around the existing backend contract.
+
+Support:
+
+* logged-out state
+* logged-in state
+* session/token handling as dictated by backend
+* 401 handling
+* logout
+* protected pages
+* user-specific data
+* favorites
+* history
+* ratings
+* comments
+
+Do not invent an authentication mechanism.
+
+If CSRF is required by the backend, implement it correctly for relevant mutating requests.
+
+---
+
+# 28. HIDDEN ADMIN PANEL
+
+Create a completely separate professional admin experience.
+
+It must not be part of the normal public navigation.
+
+Conceptually:
+
+```text
+PUBLIC APPLICATION
+        │
+        ├── Public/User Routes
+        │
+        └── Protected Admin Routes
+                 │
+                 ├── Admin Authentication
+                 ├── Admin Authorization
+                 └── Admin Application
+```
+
+Important:
+
+A hidden frontend route is NOT security.
+
+Actual authorization must remain enforced by the backend.
+
+The frontend must still implement:
+
+* admin route guard
+* authenticated admin state
+* permission-aware UI
+* unauthorized state
+* admin login handling
+* safe logout
+
+Do not expose admin controls to ordinary users.
+
+---
+
+# 29. ADMIN PANEL DESIGN
+
+The admin panel must NOT look like a rushed CRUD generator.
+
+Build it as a professional SaaS/media management interface.
+
+Potential modules based on actual backend support:
+
+```text
+Dashboard
+Movies
+Series
+Episodes
+Genres
+Users
+Comments
+Ratings
+Favorites
+Watch Progress
+Moderation
+Search / Content Management
+System / Configuration where supported
+```
+
+Only implement modules supported by actual backend contracts.
+
+---
+
+# 30. ADMIN CRUD
+
+Where the backend supports CRUD, implement:
+
+* list
+* search
+* filter
+* sort
+* pagination
+* create
+* view
+* edit
+* delete
+* validation
+* confirmation
+* optimistic behavior only when safe
+* loading
+* error
+* empty states
+* success feedback
+
+For destructive operations:
+
+```text
+Action
+ ↓
+Confirmation
+ ↓
+API request
+ ↓
+Success/Error
+ ↓
+UI refresh/update
+```
+
+Never silently delete important data.
+
+---
+
+# 31. ADMIN TABLES
+
+Admin data tables should support:
+
+* responsive behavior
+* useful columns
+* sorting
+* filtering
+* pagination
+* row actions
+* bulk operations only when backend supports them
+* loading skeletons
+* empty state
+* error state
+* mobile adaptation
+
+Do not create giant unusable tables on mobile.
+
+On mobile, convert dense table interactions into cards/drawers where appropriate.
+
+---
+
+# 32. ADMIN FORMS
+
+Forms must be professional.
+
+Support:
+
+* clear labels
+* validation
+* server errors
+* field errors
+* loading states
+* disabled states
+* success feedback
+* cancel behavior
+* unsaved-change protection where appropriate
+
+Do not rely exclusively on browser-native validation.
+
+---
+
+# 33. ERROR ARCHITECTURE
+
+Create centralized error handling.
+
+Normalize API errors into user-friendly states.
+
+Differentiate:
+
+```text
+Network Error
+Authentication Error
+Authorization Error
+Validation Error
+Not Found
+Rate Limit
+Server Error
+Streaming Error
+WebSocket Error
+Unknown Error
+```
+
+Never expose raw stack traces to users.
+
+Log useful technical information in development/debug environments without leaking sensitive information.
+
+---
+
+# 34. LOADING / EMPTY / ERROR STATES
+
+Every major feature must have all three.
+
+### Loading
+
+Use polished skeletons or appropriate loading indicators.
+
+### Empty
+
+Explain what is empty and what the user can do next.
+
+### Error
+
+Explain what failed and provide a recovery action where possible.
+
+Never leave a blank screen.
+
+---
+
+# 35. ACCESSIBILITY
+
+Build accessibility into the architecture.
+
+Support:
+
+* keyboard navigation
+* focus states
+* semantic HTML
+* aria labels where necessary
+* accessible dialogs
+* accessible menus
+* accessible forms
+* sufficient contrast
+* screen-reader-friendly controls
+* reduced-motion consideration
+
+Do not sacrifice accessibility for visual design.
+
+---
+
+# 36. PERFORMANCE
+
+Optimize for real-world devices.
+
+Pay attention to:
+
+* image loading
+* poster optimization
+* lazy loading
+* route-level code splitting
+* component rendering
+* unnecessary API requests
+* unnecessary state updates
+* video lifecycle
+* WebSocket lifecycle
+* event listeners
+* memory leaks
+
+Do not over-engineer prematurely.
+
+Measure complexity against actual product needs.
+
+---
+
+# 37. STATE MANAGEMENT
+
+Separate:
+
+### Server state
+
+Examples:
+
+* movies
+* series
+* episodes
+* recommendations
+* favorites
+* comments
+* ratings
+* watch progress
+
+from:
+
+### Client/UI state
+
+Examples:
+
+* modals
+* player UI
+* voice overlay state
+* sidebar state
+* filters
+* temporary form state
+* active player state
+
+Do not put everything into one giant global store.
+
+Use the existing project state solution when available.
+
+---
+
+# 38. COMPONENT ARCHITECTURE
+
+Components must be reusable and composable.
+
+Avoid giant components such as:
+
+```text
+HomePage.jsx
+```
+
+containing thousands of lines.
+
+Prefer:
+
+```text
+Page
+ ├── Section
+ │    ├── Card
+ │    ├── Card
+ │    └── Card
+ ├── Player
+ └── VoiceOverlay
+```
+
+Separate:
+
+* presentation
+* business logic
+* API logic
+* state
+* utilities
+
+---
+
+# 39. NO DUPLICATED LOGIC
+
+Do not duplicate:
+
+* API calls
+* formatting
+* authentication logic
+* permission checks
+* player logic
+* voice command handling
+* design tokens
+* error handling
+* responsive behavior
+
+Create reusable abstractions.
+
+---
+
+# 40. ANIMATION PHILOSOPHY
+
+Animations must communicate state, hierarchy, or interaction.
+
+Good:
+
+* subtle card hover
+* page transition
+* drawer opening
+* modal transition
+* player control fade
+* voice orb animation
+* loading state
+
+Bad:
+
+* constant unnecessary movement
+* excessive bounce
+* distracting transitions
+* heavy animations on mobile
+
+Respect reduced-motion preferences.
+
+---
+
+# 41. DESIGN CONSISTENCY
+
+The following must feel like one product:
+
+```text
+Home
+Search
+Movie
+Series
+Episode
+Player
+Profile
+Favorites
+Voice Overlay
+Admin
+```
+
+Do not allow:
+
+* different button styles
+* different spacing rules
+* different card radius
+* random typography
+* inconsistent icons
+* inconsistent modal behavior
+* inconsistent error messages
+
+Create one coherent design language.
+
+---
+
+# 42. ICONS AND ASSETS
+
+Use a consistent icon strategy.
+
+Do not randomly mix:
+
+* emoji
+* SVG from unrelated sources
+* different icon families
+* arbitrary symbols
+
+Use the existing project icon system if available.
+
+For media assets:
+
+* lazy load where appropriate
+* provide fallbacks
+* handle missing images
+* preserve aspect ratios
+* avoid layout shifts
+
+---
+
+# 43. MOBILE-FIRST PRODUCT THINKING
+
+Do not treat mobile as an afterthought.
+
+Particularly optimize:
+
+* video player
+* voice control
+* search
+* bottom navigation
+* content cards
+* episode lists
+* filters
+* profile
+* admin interactions
+
+Touch targets must be comfortable.
+
+---
+
+# 44. VOICE + VISUAL UI MUST WORK TOGETHER
+
+Voice commands must produce visual feedback.
+
+Example:
+
+```text
+User:
+"Keyingi qismga o't"
+
+Voice:
+→ recognized
+→ dispatcher
+→ next episode
+→ player changes
+→ UI updates
+```
+
+The user should never wonder whether the command worked.
+
+Likewise:
+
+```text
+"gromkostni ko'tar"
+
+→ command recognized
+→ volume changes
+→ player visually reflects new volume
+```
+
+Voice and visual state must never diverge.
+
+---
+
+# 45. FRONTEND STATE SENT TO VOICE AGENT
+
+When sending `frontend_state`, provide only useful state required by the documented backend protocol.
+
+Examples may include:
+
+```text
+content_type
+content_id
+content_title
+is_playing
+current_time_seconds
+```
+
+Keep the state contract controlled and predictable.
+
+Do not send the entire application state.
+
+Do not expose unnecessary sensitive information.
+
+---
+
+# 46. SECURITY PRINCIPLES
+
+Frontend security is not a replacement for backend authorization.
+
+Never:
+
+* expose secrets
+* hardcode private credentials
+* trust frontend admin checks
+* assume hidden routes are secure
+* expose sensitive backend information
+* place secret API keys into public client code
+
+Use frontend security as defense-in-depth.
+
+Backend remains authoritative.
+
+---
+
+# 47. DOMAIN / ENVIRONMENT MIGRATION TEST
+
+The architecture must pass this conceptual test:
+
+### Before
+
+```text
+production-domain-A
+```
+
+### After
+
+```text
+production-domain-B
+```
+
+Changing environment configuration must not require editing dozens of components.
+
+The same principle must apply to:
+
+```text
+API
+WebSocket
+Streaming
+CDN
+```
+
+---
+
+# 48. BACKEND CONTRACT COMPATIBILITY
+
+Do not modify endpoint names because you prefer a different naming style.
+
+Do not modify request/response structures.
+
+Do not rename backend fields in ways that break integration.
+
+Create frontend adapters/types if necessary.
+
+If API inconsistencies exist, isolate them in the API/service layer.
+
+Never spread backend quirks throughout the UI.
+
+---
+
+# 49. IMPLEMENTATION STRATEGY
+
+Do not attempt to blindly generate the entire application in one uncontrolled pass.
+
+Work in controlled phases.
+
+## PHASE 1 — Repository Audit
+
+Inspect everything.
+
+Produce an internal understanding of:
+
+* architecture
+* dependencies
+* routes
+* APIs
+* existing components
+* current implementation
+* missing functionality
+* risks
+
+Do not rewrite anything unnecessarily.
+
+## PHASE 2 — Architecture
+
+Establish:
+
+* project structure
+* routing
+* config
+* API layer
+* state strategy
+* auth strategy
+* design system foundation
+* voice architecture boundaries
+
+## PHASE 3 — Design System
+
+Build:
+
+* tokens
+* typography
+* buttons
+* inputs
+* cards
+* dialogs
+* drawers
+* navigation
+* feedback components
+* skeletons
+* responsive primitives
+
+## PHASE 4 — Core Application
+
+Build:
+
+* navigation
+* home
+* search
+* content
+* movies
+* series
+* episodes
+* player
+
+## PHASE 5 — User Features
+
+Build:
+
+* favorites
+* history
+* continue watching
+* ratings
+* comments
+* profile
+* account
+
+## PHASE 6 — Voice System
+
+Integrate:
+
+* STT
+* normalization
+* fast path
+* WebSocket
+* dispatcher
+* tool handlers
+* confirmation
+* clarification
+* TTS
+* overlay
+
+## PHASE 7 — Admin
+
+Build the protected admin application.
+
+## PHASE 8 — Polish
+
+Perform:
+
+* UI consistency
+* responsive fixes
+* accessibility
+* animation refinement
+* performance optimization
+* error-state refinement
+
+## PHASE 9 — Verification
+
+Test the complete system.
+
+---
+
+# 50. DO NOT STOP AT "IT COMPILES"
+
+Compilation is not completion.
+
+Before considering the task complete, verify:
+
+### Functional
+
+* routes work
+* API requests work
+* auth works
+* player works
+* streaming works
+* seek works
+* favorites work
+* history works
+* search works
+* ratings/comments work
+* voice works
+* WebSocket works
+* TTS works
+* admin works
+
+### UX
+
+* mobile
+* tablet
+* desktop
+* loading
+* empty
+* error
+* success
+* offline/network failure
+* authentication transitions
+
+### Voice
+
+* microphone permission
+* STT failure
+* command recognition
+* negation
+* ambiguous command
+* confirmation
+* WebSocket reconnect
+* clarification
+* TTS
+* stop listening
+* player targeting
+
+### Streaming
+
+* 404
+* 416
+* 502
+* 503
+* retry
+* player reload
+
+### Security
+
+* unauthenticated admin access
+* unauthorized access
+* logout
+* CSRF where required
+* no exposed secrets
+
+---
+
+# 51. DO NOT CREATE FAKE FUNCTIONALITY
+
+Never implement fake APIs such as:
+
+```text
+mockMovies()
+fakeUsers()
+fakeAdminData()
+fakeRecommendations()
+```
+
+unless explicitly requested for development/testing.
+
+Do not make buttons appear functional when they are not connected.
+
+If a backend capability does not exist:
+
+* show an appropriate unavailable state;
+* isolate the feature;
+* do not fake successful behavior.
+
+---
+
+# 52. DO NOT DELETE WORKING FEATURES
+
+Before replacing anything:
+
+1. inspect it;
+2. understand it;
+3. determine whether it works;
+4. preserve working behavior;
+5. improve only where necessary.
+
+Never rewrite a working system simply because your preferred architecture is different.
+
+---
+
+# 53. CODE QUALITY
+
+Code must be:
+
+* readable
+* maintainable
+* typed where project supports typing
+* modular
+* testable
+* reusable
+* predictable
+
+Avoid:
+
+* giant files
+* giant components
+* duplicated logic
+* magic numbers
+* hardcoded URLs
+* hardcoded API behavior
+* unnecessary global state
+* unexplained hacks
+* dead code
+
+---
+
+# 54. DOCUMENT IMPORTANT ARCHITECTURAL DECISIONS
+
+When an architectural decision is non-obvious, document it.
+
+Examples:
+
+* why API URLs are centralized
+* why voice dispatcher is centralized
+* why player identification uses a specific mechanism
+* why certain state is local vs global
+* why certain API quirks are isolated
+
+Do not create excessive documentation for trivial code.
+
+---
+
+# 55. FINAL QUALITY BAR
+
+The finished product must satisfy this standard:
+
+> A professional frontend engineer should be able to enter the repository and immediately understand the architecture.
+
+> A designer should see a coherent, premium visual system.
+
+> A user should experience a fast, polished, intuitive streaming platform.
+
+> A mobile user should not feel like they are using a reduced desktop website.
+
+> A voice user should be able to control the platform naturally.
+
+> An administrator should have a serious professional management interface.
+
+> A future developer should be able to change the domain or infrastructure without rewriting the application.
+
+> A backend developer should be able to maintain API contracts without frontend code being scattered across hundreds of components.
+
+---
+
+# 56. FINAL NON-NEGOTIABLE RULES
+
+1. Do not modify backend unless explicitly instructed.
+2. Do not invent API contracts.
+3. Do not hardcode infrastructure URLs throughout the UI.
+4. Do not sacrifice functionality for visual design.
+5. Do not sacrifice visual quality for implementation convenience.
+6. Do not remove voice functionality.
+7. Do not remove the documented voice architecture.
+8. Do not scatter voice logic across components.
+9. Do not create fake functionality.
+10. Do not expose admin controls to normal users.
+11. Do not treat a hidden admin route as real security.
+12. Do not create giant components.
+13. Do not duplicate API logic.
+14. Do not duplicate design-system rules.
+15. Do not ignore mobile.
+16. Do not ignore loading/error/empty states.
+17. Do not create infinite retries.
+18. Do not leak secrets.
+19. Do not unnecessarily replace existing working code.
+20. Do not consider the task complete merely because the application builds.
+
+---
+
+# 57. DEFINITION OF DONE
+
+The project is complete only when:
+
+```text
+Architecture
+        ✓
+
+API integration
+        ✓
+
+Authentication
+        ✓
+
+Video streaming
+        ✓
+
+Professional player
+        ✓
+
+Search
+        ✓
+
+Content discovery
+        ✓
+
+Favorites
+        ✓
+
+History
+        ✓
+
+Continue watching
+        ✓
+
+Ratings/comments
+        ✓
+
+Profile/account
+        ✓
+
+Voice STT
+        ✓
+
+Voice normalization
+        ✓
+
+Voice fast-path
+        ✓
+
+WebSocket
+        ✓
+
+LLM tool handling
+        ✓
+
+Frontend dispatcher
+        ✓
+
+Confirmation/clarification
+        ✓
+
+TTS
+        ✓
+
+Voice overlay
+        ✓
+
+58 documented voice functions
+        ✓
+
+Premium UI/UX
+        ✓
+
+Responsive design
+        ✓
+
+Accessibility
+        ✓
+
+Performance
+        ✓
+
+Error handling
+        ✓
+
+Future-proof configuration
+        ✓
+
+Protected admin application
+        ✓
+
+Admin CRUD
+        ✓
+
+Production verification
+        ✓
+```
+
+---
+
+# 58. HOW YOU SHOULD WORK
+
+Use your full reasoning and engineering capability.
+
+Do not rush.
+
+Do not generate random code just to show progress.
+
+Think about dependencies between features before implementing them.
+
+When a feature affects architecture, solve the architecture first.
+
+When a design decision affects usability, evaluate it from the user's perspective.
+
+When a backend limitation affects UX, create graceful degradation.
+
+When a future change is likely, isolate it behind an abstraction.
+
+When existing code is good, preserve it.
+
+When existing code is weak, improve it carefully rather than blindly rewriting everything.
+
+The goal is not to produce the largest amount of code.
+
+The goal is to produce the **highest-quality maintainable production frontend possible**.
+
+---
+
+# FINAL INSTRUCTION
+
+Start by auditing the repository and all provided project documentation.
+
+Do not begin by blindly generating pages.
+
+First understand the existing system.
+
+Then establish the architecture and design system.
+
+Then implement the product incrementally.
+
+After each major phase, verify that existing functionality remains intact.
+
+Do not declare success until the application meets the complete Definition of Done above.
