@@ -1,4 +1,4 @@
-# Ovozli Boshqaruv — To'liq Frontend Hujjati (Final)
+ # Ovozli Boshqaruv — To'liq Frontend Hujjati (Final)
 
 Bu — loyihaning **yakuniy, 100% to'ldirilgan** frontend hujjati. Uch qismni birlashtiradi:
 

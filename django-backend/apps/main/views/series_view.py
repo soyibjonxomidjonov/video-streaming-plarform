@@ -71,6 +71,9 @@ class Rating_SeriesViewSet(viewsets.ModelViewSet):
     search_fields = ['user__email', 'user__first_name', 'user__last_name', 'series__title']
     pagination_class = CustomPagination
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
 
 class Comment_SeriesViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
@@ -81,6 +84,9 @@ class Comment_SeriesViewSet(viewsets.ModelViewSet):
     filterset_class = CommentSeriesFilter
     search_fields = ['text', 'user__email', 'user__first_name', 'user__last_name', 'series__title']
     pagination_class = CustomPagination
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
 
@@ -94,6 +100,9 @@ class Favorites_SeriesViewSet(viewsets.ModelViewSet):
     search_fields = ['user__email', 'user__first_name', 'user__last_name', 'series__title']
     pagination_class = CustomPagination
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
 
 class WatchProgress_EpisodeViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
@@ -104,3 +113,6 @@ class WatchProgress_EpisodeViewSet(viewsets.ModelViewSet):
     filterset_class = WatchProgressEpisodeFilter
     search_fields = ['user__email', 'user__first_name', 'user__last_name', 'episode__series__title']
     pagination_class = CustomPagination
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

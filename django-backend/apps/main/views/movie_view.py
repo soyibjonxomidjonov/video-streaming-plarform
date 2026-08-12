@@ -61,6 +61,9 @@ class Comment_MovieViewSet(viewsets.ModelViewSet):
     search_fields = ['text', 'user__email', 'user__first_name', 'user__last_name', 'movie__title']
     pagination_class = CustomPagination
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
 class Rating_MovieViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStaffOrReadOnly]
@@ -70,6 +73,9 @@ class Rating_MovieViewSet(viewsets.ModelViewSet):
     filterset_class = RatingMovieFilter
     search_fields = ['user__email', 'user__first_name', 'user__last_name', 'movie__title']
     pagination_class = CustomPagination
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
 class Favorites_MovieViewSet(viewsets.ModelViewSet):
@@ -82,6 +88,9 @@ class Favorites_MovieViewSet(viewsets.ModelViewSet):
     search_fields = ['user__email', 'user__first_name', 'user__last_name', 'movie__title']
     pagination_class = CustomPagination
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
 
 
 class WatchProgress_MovieViewSet(viewsets.ModelViewSet):
@@ -93,3 +102,6 @@ class WatchProgress_MovieViewSet(viewsets.ModelViewSet):
     filterset_class = WatchProgressMovieFilter
     search_fields = ['user__email', 'user__first_name', 'user__last_name', 'movie__title']
     pagination_class = CustomPagination
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
