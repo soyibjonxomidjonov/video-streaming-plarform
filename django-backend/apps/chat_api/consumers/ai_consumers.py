@@ -48,7 +48,8 @@ class AIConsumer(AsyncWebsocketConsumer):
         if not text:
             await self.send_error("EMPTY_TEXT", "Matn bo'sh bo'lishi mumkin emas")
             return
-
+        
+        print(f"🚀 process_command task yaratilmoqda: {text}")
         asyncio.create_task(self.process_command(text))
 
 

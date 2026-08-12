@@ -25,9 +25,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
     try {
-      const profile = await api.me()
-      setUser(profile)
-    } catch {
+      const token = getToken()
+      if (token) {
+        // Since backend doesn't have a /me endpoint, we parse the JWT token
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        // Set basic profile using user_id from token
+        setUser({ id: payload.user_id, email: '', first_name: 'User', last_name: '', is_staff: false, is_superuser: false, role: 'user' } as any)
+      } else {
+        setUser(null)
+      }
+    } catch (e) {
+      console.error('Failed to parse token', e)
       setUser(null)
     } finally {
       setLoading(false)

@@ -36,8 +36,8 @@ function Row({ title, kicker, items, type }: { title: string; kicker?: string; i
 
 export default async function HomePage() {
   const [moviesData, seriesData] = await Promise.all([
-    safe(api.movies('ordering=-rating'), [] as MediaItem[]),
-    safe(api.series('ordering=-rating'), [] as MediaItem[]),
+    safe(api.movies(), [] as MediaItem[]),
+    safe(api.series(), [] as MediaItem[]),
   ])
   const movies = unwrapList(moviesData)
   const series = unwrapList(seriesData)
