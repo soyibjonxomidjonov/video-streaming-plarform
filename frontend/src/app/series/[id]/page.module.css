@@ -1,0 +1,358 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-bottom: var(--spacing-16);
+}
+
+.playerSection {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  background: var(--bg-base);
+}
+
+@media (min-width: 1024px) {
+  .playerSection {
+    padding: var(--spacing-6) var(--spacing-8) 0;
+  }
+}
+
+.content {
+  margin-top: var(--spacing-6);
+}
+
+/* Header & Meta (similar to movies) */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-8);
+}
+
+@media (min-width: 768px) {
+  .header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-2);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.metaDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-gold);
+  font-weight: 600;
+}
+
+.genres {
+  display: flex;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.genreTag {
+  background: var(--surface-2);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.actionBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color var(--transition-micro);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.actionBtn:hover {
+  color: var(--text-primary);
+}
+
+.actionBtn.active {
+  color: var(--accent-primary);
+}
+
+.description {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  max-width: 800px;
+  margin-bottom: var(--spacing-10);
+}
+
+/* ─── Episodes Section ────── */
+.episodesSection {
+  margin-bottom: var(--spacing-10);
+}
+
+.episodesTitle {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-4);
+}
+
+.episodeGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-4);
+}
+
+@media (min-width: 640px) {
+  .episodeGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .episodeGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.episodeCard {
+  display: flex;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  cursor: pointer;
+  transition: background var(--transition-micro), transform var(--transition-micro);
+  border: 1px solid transparent;
+}
+
+.episodeCard:hover {
+  background: var(--surface-2);
+  transform: translateY(-2px);
+}
+
+.episodeCard.active {
+  background: var(--surface-2);
+  border-color: var(--accent-primary);
+}
+
+.episodeThumb {
+  width: 120px;
+  aspect-ratio: 16/9;
+  border-radius: var(--radius-md);
+  background: var(--surface-3);
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.episodeThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.episodeFallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.episodeInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.episodeNumber {
+  font-size: 0.75rem;
+  color: var(--accent-primary);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.episodeTitle {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.episodeDuration {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  color: var(--text-muted);
+}
+
+/* ─── Rating Section ────── */
+.ratingSection {
+  margin-bottom: var(--spacing-8);
+  padding: var(--spacing-5);
+  background: var(--surface-1);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ─── Comments ────── */
+.commentsSection {
+  margin-top: var(--spacing-10);
+  padding-top: var(--spacing-8);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.commentsTitle {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-6);
+}
+
+.commentForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-8);
+}
+
+.commentInput {
+  width: 100%;
+  min-height: 88px;
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--transition-micro);
+}
+
+.commentInput:focus {
+  border-color: var(--accent-primary);
+}
+
+.commentInput::placeholder {
+  color: var(--text-muted);
+}
+
+.commentLoginPrompt {
+  padding: var(--spacing-4);
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-6);
+}
+
+.commentList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+.commentCard {
+  display: flex;
+  gap: var(--spacing-4);
+}
+
+.commentAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  font-size: 0.875rem;
+}
+
+.commentContent {
+  flex: 1;
+}
+
+.commentHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-1);
+}
+
+.commentAuthor {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+}
+
+.commentDate {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.commentText {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
