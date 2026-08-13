@@ -1,4 +1,5 @@
 from rest_framework import serializers
+# pyrefly: ignore [missing-import]
 from apps.main.models.movies import Movie, Rating_Movie, Comment_Movie, WatchProgress_Movie, Favorites_Movie
 
 
