@@ -266,9 +266,17 @@ GO_STREAMER_BASE_URL="http://16.170.242.253:8081"
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://backend.scholarmap.uz",
+    "https://alvion.scholarmap.uz",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
+    "https://backend.scholarmap.uz",
+    "https://alvion.scholarmap.uz",
 ]
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
 CORS_ALLOW_CREDENTIALS = True
