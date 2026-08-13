@@ -1,38 +1,163 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
 @theme inline {
-  --font-sans: var(--font-inter);
-  --font-display: var(--font-space);
-  --color-background: #0a0715;
-  --color-foreground: #f3f1fb;
-  --color-card: #150f28;
-  --color-card-foreground: #f3f1fb;
-  --color-muted: #1c1533;
-  --color-muted-foreground: #9891b8;
-  --color-border: #2a2148;
-  --color-primary: #8b5cf6;
-  --color-primary-foreground: #fbfaff;
-  --color-secondary: #1e1738;
-  --color-accent: #c084fc;
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-display: 'Outfit', system-ui, sans-serif;
+
+  /* === CINEMA AMBER DARK PALETTE === */
+  --color-background: #0b0c10;
+  --color-foreground: #f5f3ed;
+  --color-surface: #15171d;
+  --color-surface-2: #20232b;
+  --color-card: #15171d;
+  --color-card-foreground: #f5f3ed;
+  --color-muted: #20232b;
+  --color-muted-foreground: #a3a7b3;
+  --color-border: #2d313b;
+  --color-secondary: #1a1d24;
+
+  /* === PRIMARY — Cinema Amber === */
+  --color-primary: #f2a51a;
+  --color-primary-foreground: #15110a;
+  --color-primary-hover: #d98e0c;
+  --color-primary-muted: #8c5e0b;
+  --color-primary-subtle: rgba(242, 165, 26, 0.14);
+
+  --color-accent: #ffd166;
+  --color-accent-foreground: #15110a;
+
+  /* === Voice Orb === */
+  --color-orb-from: #ffd166;
+  --color-orb-mid: #f2a51a;
+  --color-orb-to: #b66b08;
+
+
+  /* === Status === */
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
 }
 
-* { box-sizing: border-box; }
-body { margin: 0; background: #0a0715; color: #f3f1fb; font-family: var(--font-inter), sans-serif; }
-.font-display { font-family: var(--font-space), sans-serif; }
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #0a0715; }
-::-webkit-scrollbar-thumb { background: #2a2148; border-radius: 8px; }
-.hero-grid { background-image: linear-gradient(rgba(139,92,246,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,.05) 1px, transparent 1px); background-size: 48px 48px; }
-.glow-primary { box-shadow: 0 0 24px 4px rgba(139,92,246,.35); }
-@keyframes orb-pulse { 0%, 100% { transform: scale(1); opacity: .55; } 50% { transform: scale(1.12); opacity: .9; } }
-@keyframes orb-spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-.animate-orb-pulse { animation: orb-pulse 1.8s ease-in-out infinite; }
-.animate-orb-spin-slow { animation: orb-spin-slow 6s linear infinite; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background: #0b0c10;
+  color: #f5f3ed;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  line-height: 1.5;
+  overflow-x: hidden;
+  min-height: 100dvh;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #09090b; }
+::-webkit-scrollbar-thumb { background: #27272a; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+.font-display { font-family: 'Outfit', system-ui, sans-serif; }
+h1, h2, h3, h4 { font-family: 'Outfit', system-ui, sans-serif; font-weight: 700; line-height: 1.2; }
+
+:focus-visible {
+  outline: 2px solid #f2a51a;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+a { color: inherit; text-decoration: none; }
+
+::selection {   background: rgba(242, 165, 26, 0.3);
+ color: #ffffff; }
+
 .text-balance { text-wrap: balance; }
 .safe-top { padding-top: max(0.5rem, env(safe-area-inset-top)); }
-@media (max-width: 640px) {
-  ::-webkit-scrollbar { height: 4px; width: 4px; }
-  input, button { -webkit-tap-highlight-color: transparent; }
-  body { overflow-x: hidden; }
+.safe-bottom { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+
+.glow-primary {   box-shadow: 0 0 25px 3px rgba(242, 165, 26, 0.28);
+ }
+
+@keyframes orb-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.15); opacity: 0.9; }
+}
+@keyframes orb-spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
+.animate-orb-pulse { animation: orb-pulse 1.8s ease-in-out infinite; }
+.animate-orb-spin-slow { animation: orb-spin-slow 6s linear infinite; }
+
+.skeleton {
+  background: linear-gradient(90deg, #121217 25%, #1c1c24 50%, #121217 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+.scroll-row {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 0.5rem;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scroll-row::-webkit-scrollbar { display: none; }
+.scroll-row > * { scroll-snap-align: start; flex-shrink: 0; }
+
+.media-card {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+  will-change: transform;
+}
+.media-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(139, 92, 246, 0.3);
+}
+
+button, a {
+  transition: all 0.15s ease-out;
+}
+
+input, textarea, select {
+  background: #121217;
+  border: 1px solid #27272a;
+  color: #f4f4f5;
+  border-radius: 0.75rem;
+  font-family: inherit;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #f2a51a;
+  box-shadow: 0 0 0 3px rgba(242, 165, 26, 0.15);
+}
+input::placeholder, textarea::placeholder { color: #9a9aa2; }
+
+@media (max-width: 640px) {
+  ::-webkit-scrollbar { display: none; }
+  input, button, a { -webkit-tap-highlight-color: transparent; }
+  body { overflow-x: hidden; }
+  .media-card:hover { transform: none; box-shadow: none; }
+  .scroll-row { gap: 0.625rem; margin-inline: -1rem; padding-inline: 1rem; }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .scroll-row { gap: 0.875rem; }
+}

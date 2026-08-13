@@ -3,19 +3,40 @@
 import { type FormEvent, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Bell, Clock3, Compass, Heart, Home as HomeIcon, LayoutDashboard, Menu, Mic, Play, Search, Sparkles } from 'lucide-react'
+import {
+  Bell, Clock3, Compass, Film, Heart, Home as HomeIcon,
+  LayoutDashboard, Menu, Mic, Play, Search, Settings, Sparkles, TvMinimal, User, X
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
 import { useVoiceAssistant } from '@/components/voice-assistant-provider'
 
-function NavLink({ icon: Icon, label, href, active }: { icon: LucideIcon; label: string; href: string; active: boolean }) {
+function NavLink({
+  icon: Icon,
+  label,
+  href,
+  active,
+  onClick,
+}: {
+  icon: LucideIcon
+  label: string
+  href: string
+  active: boolean
+  onClick?: () => void
+}) {
   return (
     <Link
       href={href}
-      className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}
+      onClick={onClick}
+      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold transition ${
+        active
+          ? 'bg-primary/15 text-primary border border-primary/30'
+          : 'text-muted-foreground hover:bg-surface-2 hover:text-foreground border border-transparent'
+      }`}
     >
-      <Icon size={18} />
+      <Icon size={17} className="shrink-0" />
       <span>{label}</span>
+      {active && <span className="ml-auto size-1.5 rounded-full bg-primary" />}
     </Link>
   )
 }
@@ -27,126 +48,232 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
   const { enabled: voiceEnabled, toggle: toggleVoice } = useVoiceAssistant()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [searchFocused, setSearchFocused] = useState(false)
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault()
-    router.push(`/explore?q=${encodeURIComponent(query.trim())}`)
+    const q = query.trim()
+    if (q) {
+      router.push(`/search?q=${encodeURIComponent(q)}`)
+      setQuery('')
+      setSidebarOpen(false)
+    }
   }
 
-  const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href))
+  const isActive = (href: string) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href)
+
+  const closeSidebar = () => setSidebarOpen(false)
+
+  const userInitials = (user?.first_name
+    ? `${user.first_name[0]}${user.last_name?.[0] ?? ''}`
+    : user?.email?.slice(0, 2) ?? 'SM'
+  ).toUpperCase()
 
   return (
-    <div className="min-h-screen bg-background pb-20 lg:pb-0">
-      <header className="safe-top sticky top-0 z-30 flex min-h-[64px] items-center gap-2 border-b border-border/70 bg-background/90 px-3 py-2 backdrop-blur-xl sm:gap-4 sm:px-5 lg:h-[72px] lg:px-8">
+    <div className="min-h-screen overflow-x-clip bg-background" style={{ paddingBottom: 'max(4.5rem, calc(4.5rem + env(safe-area-inset-bottom)))' }}>
+      {/* ───── HEADER ───── */}
+      <header
+        className="safe-top sticky top-0 z-40 flex h-14 items-center gap-2 border-b border-border/80 px-3 sm:gap-3 sm:px-6 lg:h-16 lg:px-8"
+        style={{ background: 'rgba(11, 12, 16, 0.92)', backdropFilter: 'blur(16px)' }}
+      >
+        {/* Mobile menu toggle */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground lg:hidden"
-          aria-label="Toggle menu"
+          className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground lg:hidden"
+          aria-label="Menu"
         >
-          <Menu size={21} />
+          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Play size={17} fill="currentColor" />
+
+        {/* Brand Logo */}
+        <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="S-M bosh sahifa">
+          <div className="flex size-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 lg:size-9">
+            <Play size={15} fill="currentColor" className="translate-x-0.5" />
           </div>
-          <span className="font-display text-xl font-bold tracking-tight">
-            streamora<span className="text-primary">.</span>
+          <span className="font-display text-lg font-black tracking-tight text-foreground sm:text-xl">
+            S<span className="text-primary">-</span>M
           </span>
         </Link>
-        <form onSubmit={submitSearch} className="mx-auto hidden w-full max-w-xl md:block">
-          <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-2.5">
-            <Search size={17} className="text-muted-foreground" />
+
+        {/* Center Search Input (Desktop) */}
+        <form onSubmit={submitSearch} className="mx-auto hidden w-full max-w-lg md:block">
+          <div
+            className={`flex items-center gap-2.5 rounded-xl border px-3.5 py-2 transition ${
+              searchFocused ? 'border-primary bg-surface-2 shadow-lg shadow-primary/10' : 'border-border bg-surface'
+            }`}
+          >
+            <Search size={15} className="shrink-0 text-muted-foreground" />
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="Search movies, series, people..."
-              className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              placeholder="Film, serial yoki janr qidiring..."
+              className="w-full bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
             />
+            {query && (
+              <button type="button" onClick={() => setQuery('')} className="text-muted-foreground hover:text-foreground" aria-label="Tozalash">
+                <X size={13} />
+              </button>
+            )}
             <button
               type="button"
               onClick={toggleVoice}
-              aria-label={voiceEnabled ? "Ovozli yordamchini o'chirish" : 'Ovozli yordamchini yoqish'}
-              className={`rounded-lg p-1.5 transition hover:bg-secondary ${voiceEnabled ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+              aria-label="Ovozli yordamchi"
+              className={`rounded-lg p-1 transition ${
+                voiceEnabled ? 'animate-pulse text-primary' : 'text-muted-foreground hover:text-primary'
+              }`}
             >
-              <Mic size={16} />
+              <Mic size={15} />
             </button>
           </div>
         </form>
-        <div className="ml-auto flex items-center gap-2">
+
+        {/* Right Actions */}
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
           {isAdmin && (
             <Link
               href="/admin"
-              className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/20"
+              className="hidden items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/15 px-3 py-1.5 text-xs font-bold text-primary transition hover:bg-primary/25 sm:flex"
             >
-              <LayoutDashboard size={16} />
-              <span className="hidden sm:inline">Dashboard</span>
+              <LayoutDashboard size={14} /> Admin
             </Link>
           )}
-          <button className="rounded-xl p-2.5 text-muted-foreground hover:bg-secondary hover:text-foreground" aria-label="Notifications">
+
+          <button className="rounded-xl p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground" aria-label="Bildirishnomalar">
             <Bell size={18} />
           </button>
+
           {isAuthenticated ? (
-            <Link href="/profile" className="ml-1 flex size-9 items-center justify-center rounded-full bg-accent/25 text-sm font-semibold text-accent" aria-label="Profile">
-              {(user?.username ?? user?.email ?? 'U').slice(0, 2).toUpperCase()}
+            <Link
+              href="/profile"
+              className="flex size-8 items-center justify-center rounded-full bg-primary font-display text-xs font-bold text-primary-foreground shadow-md"
+              aria-label="Profil"
+            >
+              {userInitials}
             </Link>
           ) : (
-            <Link href="/login" className="ml-1 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
-              Sign in
+            <Link
+              href="/login"
+              className="rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground transition hover:bg-primary-hover active:scale-95 sm:px-4"
+            >
+              Kirish
             </Link>
           )}
         </div>
       </header>
 
       <div className="flex">
-        {sidebarOpen && <div className="fixed inset-0 z-10 bg-background/60 lg:hidden" onClick={() => setSidebarOpen(false)} aria-hidden />}
+        {/* Mobile sidebar backdrop */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-30 bg-black/70 backdrop-blur-xs lg:hidden"
+            onClick={closeSidebar}
+            aria-hidden
+          />
+        )}
+
+        {/* Sidebar */}
         <aside
-          className={`${sidebarOpen ? 'block' : 'hidden'} fixed inset-y-0 left-0 z-20 w-60 border-r border-border bg-background p-4 pt-20 lg:sticky lg:top-[72px] lg:block lg:h-[calc(100vh-72px)] lg:pt-4`}
+          className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-40 w-[min(18rem,calc(100vw-2rem))] border-r border-border bg-background p-4 transition-transform duration-200 lg:sticky lg:top-16 lg:block lg:h-[calc(100vh-64px)] lg:w-60 lg:translate-x-0 lg:pt-6`}
         >
-          <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[.18em] text-muted-foreground">Menu</p>
-          <nav className="flex flex-col gap-1">
-            <NavLink icon={HomeIcon} label="Home" href="/" active={isActive('/')} />
-            <NavLink icon={Compass} label="Explore" href="/explore" active={isActive('/explore')} />
-            <NavLink icon={Search} label="Search" href="/explore" active={false} />
-            {isAdmin && <NavLink icon={LayoutDashboard} label="Dashboard" href="/admin" active={isActive('/admin')} />}
+          <div className="mb-4 flex items-center justify-between lg:hidden">
+            <span className="font-display font-bold text-foreground">Menyu</span>
+            <button onClick={closeSidebar} className="text-muted-foreground" aria-label="Yopish"><X size={18} /></button>
+          </div>
+
+          <form onSubmit={submitSearch} className="mb-4 lg:hidden">
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2.5">
+              <Search size={14} className="text-muted-foreground" />
+              <input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Qidirish..."
+                className="w-full bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+          </form>
+
+          <nav className="space-y-5">
+            <div>
+              <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">Asosiy</p>
+              <div className="flex flex-col gap-0.5">
+                <NavLink icon={HomeIcon} label="Bosh sahifa" href="/" active={isActive('/') && !isActive('/movies') && !isActive('/series')} onClick={closeSidebar} />
+                <NavLink icon={Film} label="Filmlar" href="/movies" active={isActive('/movies')} onClick={closeSidebar} />
+                <NavLink icon={TvMinimal} label="Seriallar" href="/series" active={isActive('/series')} onClick={closeSidebar} />
+                <NavLink icon={Compass} label="Janrlar" href="/genres" active={isActive('/genres')} onClick={closeSidebar} />
+                <NavLink icon={Search} label="Qidiruv" href="/search" active={isActive('/search')} onClick={closeSidebar} />
+              </div>
+            </div>
+
+            {isAuthenticated && (
+              <div>
+                <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">Kutubxona</p>
+                <div className="flex flex-col gap-0.5">
+                  <NavLink icon={Heart} label="Sevimlilar" href="/favorites" active={isActive('/favorites')} onClick={closeSidebar} />
+                  <NavLink icon={Clock3} label="Tomosha tarixi" href="/history" active={isActive('/history')} onClick={closeSidebar} />
+                  <NavLink icon={User} label="Profil" href="/profile" active={isActive('/profile')} onClick={closeSidebar} />
+                  <NavLink icon={Settings} label="Sozlamalar" href="/settings" active={isActive('/settings')} onClick={closeSidebar} />
+                </div>
+              </div>
+            )}
           </nav>
-          <p className="mb-3 mt-8 px-3 text-[10px] font-semibold uppercase tracking-[.18em] text-muted-foreground">Your library</p>
-          <nav className="flex flex-col gap-1">
-            <NavLink icon={Heart} label="Favorites" href={isAuthenticated ? '/profile' : '/login'} active={false} />
-            <NavLink icon={Clock3} label="Watch history" href={isAuthenticated ? '/profile' : '/login'} active={isActive('/profile')} />
-          </nav>
-          <div className="mt-8 hidden rounded-2xl bg-secondary p-4 lg:block">
-            <Sparkles size={19} className="mb-3 text-primary" />
-            <p className="text-sm font-semibold">Find your next favorite</p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">Tell us what you feel like watching.</p>
-            <button onClick={toggleVoice} className="mt-4 flex items-center gap-1 text-xs font-semibold text-primary">
-              {voiceEnabled ? 'Voice assistant is on' : 'Try voice control'}
+
+          <div
+            className="mt-8 hidden rounded-2xl p-4 lg:block"
+            style={{ background: 'rgba(242,165,26,0.08)', border: '1px solid rgba(242,165,26,0.2)' }}
+          >
+            <Sparkles size={18} className="mb-2 text-primary" />
+            <p className="text-xs font-bold text-foreground">Ovozli boshqaruv</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+              Kino va seriallarni ovoz bilan toping hamda boshqaring.
+            </p>
+            <button
+              onClick={toggleVoice}
+              className="mt-3 flex items-center gap-1.5 text-xs font-bold text-primary transition hover:text-accent"
+            >
+              <Mic size={13} />
+              {voiceEnabled ? 'Ovoz faol' : 'Ishga tushirish'}
             </button>
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1 px-3 pb-8 pt-4 sm:px-5 sm:pt-6 lg:px-8 lg:pb-16">{children}</main>
+        {/* Main Content */}
+        <main className="min-w-0 flex-1 px-3 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-7">
+          {children}
+        </main>
       </div>
 
-      <nav className="fixed inset-x-3 bottom-3 z-40 flex items-center justify-around rounded-2xl border border-border bg-card/95 p-2 shadow-2xl backdrop-blur-xl lg:hidden">
-        <Link href="/" className={`rounded-xl p-2.5 ${isActive('/') ? 'text-primary' : 'text-muted-foreground'}`} aria-label="Home">
-          <HomeIcon size={20} />
+      {/* Mobile Bottom Navigation */}
+      <nav
+        className="safe-bottom fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-border/80 lg:hidden"
+        style={{ background: 'rgba(11, 12, 16, 0.97)', backdropFilter: 'blur(20px)' }}
+      >
+        <Link href="/" className={`flex flex-1 flex-col items-center gap-0.5 py-1.5 ${isActive('/') && !isActive('/movies') && !isActive('/series') ? 'text-primary' : 'text-muted-foreground'}`}>
+          <HomeIcon size={19} />
+          <span className="text-[10px] font-semibold">Bosh</span>
         </Link>
-        <Link href="/explore" className={`rounded-xl p-2.5 ${isActive('/explore') ? 'text-primary' : 'text-muted-foreground'}`} aria-label="Explore">
-          <Compass size={20} />
+        <Link href="/movies" className={`flex flex-1 flex-col items-center gap-0.5 py-1.5 ${isActive('/movies') ? 'text-primary' : 'text-muted-foreground'}`}>
+          <Film size={19} />
+          <span className="text-[10px] font-semibold">Filmlar</span>
         </Link>
-        <button
-          onClick={toggleVoice}
-          className={`flex size-12 -translate-y-4 items-center justify-center rounded-full border-4 border-background shadow-lg transition ${voiceEnabled ? 'bg-accent text-primary-foreground' : 'bg-primary text-primary-foreground'}`}
-          aria-label={voiceEnabled ? "Ovozli yordamchini o'chirish" : 'Ovozli yordamchini yoqish'}
-          aria-pressed={voiceEnabled}
-        >
-          <Mic size={20} />
-        </button>
-        <Link href={isAuthenticated ? '/profile' : '/login'} className={`rounded-xl p-2.5 ${isActive('/profile') ? 'text-primary' : 'text-muted-foreground'}`} aria-label="Saved">
-          <Heart size={20} />
+        <div className="flex flex-1 flex-col items-center">
+          <button
+            onClick={toggleVoice}
+            className={`flex size-11 items-center justify-center rounded-full transition ${voiceEnabled ? 'animate-pulse bg-primary text-primary-foreground' : 'border border-border bg-surface text-primary'}`}
+            aria-label="Ovoz"
+          >
+            <Mic size={19} />
+          </button>
+        </div>
+        <Link href={isAuthenticated ? '/favorites' : '/login'} className={`flex flex-1 flex-col items-center gap-0.5 py-1.5 ${isActive('/favorites') ? 'text-primary' : 'text-muted-foreground'}`}>
+          <Heart size={19} />
+          <span className="text-[10px] font-semibold">Sevimli</span>
         </Link>
-        <Link href={isAuthenticated ? '/profile' : '/login'} className="rounded-xl p-2.5 text-muted-foreground" aria-label="History">
-          <Clock3 size={20} />
+        <Link href={isAuthenticated ? '/profile' : '/login'} className={`flex flex-1 flex-col items-center gap-0.5 py-1.5 ${isActive('/profile') ? 'text-primary' : 'text-muted-foreground'}`}>
+          <User size={19} />
+          <span className="text-[10px] font-semibold">Profil</span>
         </Link>
       </nav>
     </div>
