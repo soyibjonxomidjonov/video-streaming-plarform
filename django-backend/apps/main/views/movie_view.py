@@ -8,7 +8,7 @@ from apps.main.serializers.movie_serializers import (MovieSerializerConfig, Rati
                                                      Comment_MovieSerializerConfig, Favorites_MovieSerializerConfig,
                                                      WatchProgress_MovieSerializerConfig)
 from apps.main.models.movies import Movie, Rating_Movie, Comment_Movie, Favorites_Movie, WatchProgress_Movie
-from apps.main.permissions import IsStaffOrReadOnly
+from apps.main.permissions import IsStaffOrReadOnly, IsOwnerOrReadOnly
 
 from rest_framework.decorators import action
 from django.http import HttpResponseRedirect
@@ -53,7 +53,7 @@ class MovieViewSet(viewsets.ModelViewSet):
 
 class Comment_MovieViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsStaffOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
     queryset = Comment_Movie.objects.all()
     serializer_class = Comment_MovieSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
@@ -66,7 +66,7 @@ class Comment_MovieViewSet(viewsets.ModelViewSet):
 
 class Rating_MovieViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsStaffOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
     queryset = Rating_Movie.objects.all()
     serializer_class = Rating_MovieSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
@@ -80,7 +80,7 @@ class Rating_MovieViewSet(viewsets.ModelViewSet):
 
 class Favorites_MovieViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsStaffOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
     queryset = Favorites_Movie.objects.all()
     serializer_class = Favorites_MovieSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
@@ -95,7 +95,7 @@ class Favorites_MovieViewSet(viewsets.ModelViewSet):
 
 class WatchProgress_MovieViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsStaffOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
     queryset = WatchProgress_Movie.objects.all()
     serializer_class = WatchProgress_MovieSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)

@@ -9,7 +9,7 @@ from apps.main.serializers.series_serializers import (SeriesSerializerConfig, Ep
                                                      WatchProgress_EpisodeSerializerConfig, Comment_SeriesSerializerConfig
                                                       )
 from apps.main.models.series import Series, Episode ,Rating_Series, Comment_Series, Favorites_Series, WatchProgress_Episode
-from apps.main.permissions import IsStaffOrReadOnly
+from apps.main.permissions import IsStaffOrReadOnly, IsOwnerOrReadOnly
 
 from rest_framework.decorators import action
 from django.http import HttpResponseRedirect
@@ -63,7 +63,7 @@ class EpisodeViewSet(viewsets.ModelViewSet):
 
 class Rating_SeriesViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsStaffOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
     queryset = Rating_Series.objects.all()
     serializer_class = Rating_SeriesSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
@@ -77,7 +77,7 @@ class Rating_SeriesViewSet(viewsets.ModelViewSet):
 
 class Comment_SeriesViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsStaffOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
     queryset = Comment_Series.objects.all()
     serializer_class = Comment_SeriesSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
@@ -92,7 +92,7 @@ class Comment_SeriesViewSet(viewsets.ModelViewSet):
 
 class Favorites_SeriesViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsStaffOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
     queryset = Favorites_Series.objects.all()
     serializer_class = Favorites_SeriesSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
@@ -106,7 +106,7 @@ class Favorites_SeriesViewSet(viewsets.ModelViewSet):
 
 class WatchProgress_EpisodeViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsStaffOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
     queryset = WatchProgress_Episode.objects.all()
     serializer_class = WatchProgress_EpisodeSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
