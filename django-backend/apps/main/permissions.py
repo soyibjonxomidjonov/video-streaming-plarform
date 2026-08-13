@@ -14,7 +14,8 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
             return True
 
         # Write permissions are only allowed to the owner of the snippet.
-        return obj.owner == request.user
+        user_attr = getattr(obj, 'user', None) or getattr(obj, 'owner', None)
+        return user_attr == request.user
 
 class IsStaffOrReadOnly(permissions.BasePermission):
     """

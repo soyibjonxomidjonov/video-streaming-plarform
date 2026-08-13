@@ -266,6 +266,8 @@ GO_STREAMER_BASE_URL="http://16.170.242.253:8081"
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
     "https://backend.scholarmap.uz",
     "https://alvion.scholarmap.uz",
 ]

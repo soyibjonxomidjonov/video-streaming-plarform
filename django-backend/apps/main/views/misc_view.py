@@ -1,4 +1,5 @@
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAdminUser
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import viewsets
 from apps.main.serializers.misc_serializers import GenreSerializerConfig
@@ -36,7 +37,7 @@ class GenreViewSet(viewsets.ModelViewSet):
 
 class UserViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsSuperuserOrReadOnly]
+    permission_classes = [IsAdminUser]
     queryset = User.objects.all()
     serializer_class = UserSerializerConfig
     # filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
