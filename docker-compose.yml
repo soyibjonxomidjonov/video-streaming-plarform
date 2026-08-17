@@ -104,25 +104,6 @@ services:
                 condition: service_started
         command: daphne -b 0.0.0.0 -p 8000 config.asgi:application
 
-    django3:
-        build: ./django-backend
-        container_name: django3
-        restart: unless-stopped
-        env_file:
-            - ./django-backend/.env
-        volumes:
-            - ./django-backend:/app
-        ports:
-            - "8003:8000"
-        depends_on:
-            postgres:
-                condition: service_healthy
-            redis:
-                condition: service_started
-            rabbitmq:
-                condition: service_started
-        command: daphne -b 0.0.0.0 -p 8000 config.asgi:application
-
     celery:
         build: ./django-backend
         container_name: celery

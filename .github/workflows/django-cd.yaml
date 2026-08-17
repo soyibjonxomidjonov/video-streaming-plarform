@@ -28,7 +28,6 @@ jobs:
                         sleep 5
                         docker-compose up -d --no-deps --force-recreate django2
                         sleep 5
-                        docker-compose up -d --no-deps --force-recreate django3
                         docker-compose up -d --no-deps --force-recreate celery
                       else
                         docker-compose run --rm django python manage.py migrate
@@ -37,7 +36,6 @@ jobs:
                         sleep 5
                         docker-compose up -d --no-deps --force-recreate django2
                         sleep 5
-                        docker-compose up -d --no-deps --force-recreate django3
                       fi
 
                       docker image prune -f
