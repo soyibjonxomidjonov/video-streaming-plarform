@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Controlled Video Player (Test)</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --text-muted: #888;
+            --primary: #4caf50;
+            --danger: #f44336;
+            --danger-hover: #d32f2f;
+            --border-color: #333;
+            --log-sent: #ffd54f;
+            --log-recv: #4fc3f7;
+            --flash-color: #4caf50;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--surface-color);
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--danger);
+            transition: background-color 0.3s;
+        }
+
+        .status-dot.connected {
+            background-color: var(--primary);
+        }
+        
+        .status-dot.connecting {
+            background-color: #ff9800;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { opacity: 0.5; }
+            to { opacity: 1; }
+        }
+
+        .connection-form {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            justify-content: flex-end;
+        }
+
+        input[type="text"], input[type="password"] {
+            background-color: #2a2a2a;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 4px;
+            outline: none;
+            flex: 1;
+            max-width: 300px;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: var(--primary);
+        }
+
+        button {
+            background-color: #333;
+            color: white;
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #444;
+        }
+
+        /* Settings Row */
+        .settings-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: var(--surface-color);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        .settings-row label {
+            white-space: nowrap;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .settings-row input {
+            flex: 1;
+        }
+
+        .settings-row .saved-badge {
+            color: var(--primary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: none;
+        }
+
+        .settings-row .saved-badge.show {
+            display: inline;
+        }
+
+        /* Video Area */
+        .video-container {
+            width: 100%;
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid transparent;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+
+        .video-container.flash {
+            border-color: var(--flash-color);
+            box-shadow: 0 0 15px var(--flash-color);
+        }
+
+        .video-container.pseudo-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background-color: #000;
+            border-radius: 0;
+            margin: 0;
+            border: none;
+        }
+
+        video {
+            width: 100%;
+            max-height: 450px;
+            display: block;
+        }
+
+        .video-container.pseudo-fullscreen video {
+            max-height: 100vh;
+            height: 100%;
+        }
+
+        /* Controls Area */
+        .controls-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            background-color: var(--surface-color);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .mic-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #333;
+            border: 3px solid var(--border-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 32px;
+            user-select: none;
+            position: relative;
+        }
+
+        .mic-btn:hover {
+            transform: scale(1.05);
+            background-color: #444;
+        }
+
+        .mic-btn.listening {
+            background-color: var(--danger);
+            border-color: #ff8a80;
+            box-shadow: 0 0 20px rgba(244, 67, 54, 0.4);
+            animation: breathe 2s infinite ease-in-out;
+        }
+
+        .mic-btn.processing {
+            background-color: #ff9800;
+            border-color: #ffcc80;
+            box-shadow: 0 0 20px rgba(255, 152, 0, 0.4);
+            animation: none;
+        }
+
+        @keyframes breathe {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Audio Level Bar */
+        .audio-level-container {
+            width: 200px;
+            height: 6px;
+            background-color: #2a2a2a;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .audio-level-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), #8bc34a);
+            border-radius: 3px;
+            transition: width 0.05s ease-out;
+        }
+
+        .audio-level-bar.speaking {
+            background: linear-gradient(90deg, #ff9800, var(--danger));
+        }
+
+        .status-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            text-align: center;
+            min-height: 24px;
+        }
+
+        .interim-text {
+            color: var(--text-muted);
+            font-style: italic;
+            text-align: center;
+            min-height: 20px;
+            font-size: 0.95rem;
+            margin-top: -5px;
+        }
+
+        .speech-info {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: -5px;
+        }
+
+        .fallback-controls {
+            display: flex;
+            width: 100%;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        /* Log Panel */
+        .log-panel {
+            background-color: #0d0d0d;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            height: 250px;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px dashed #222;
+            word-wrap: break-word;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-time {
+            color: #666;
+            margin-right: 10px;
+        }
+
+        .log-sent {
+            color: var(--log-sent);
+        }
+
+        .log-recv {
+            color: var(--log-recv);
+        }
+
+        .log-error {
+            color: var(--danger);
+        }
+
+        .log-info {
+            color: #aaa;
+        }
+
+        /* Custom Scrollbar for log panel */
+        .log-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+        .log-panel::-webkit-scrollbar-track {
+            background: #111;
+        }
+        .log-panel::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        .log-panel::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="status-container">
+            <div id="wsStatusDot" class="status-dot"></div>
+            <span id="wsStatusText">Ulanmagan</span>
+        </div>
+        <form class="connection-form" id="connectForm">
+            <input type="text" id="tokenInput" placeholder="JWT Token kiritish..." autocomplete="off">
+            <button type="submit">Ulash</button>
+        </form>
+    </div>
+
+    <!-- Mohir API Key (Uzbekvoice STT uchun) -->
+    <div class="settings-row">
+        <label>🎙 Mohir API Key:</label>
+        <input type="password" id="mohirKeyInput" placeholder="b7a4aafd..." autocomplete="off">
+        <button type="button" id="saveMohirKeyBtn">Saqlash</button>
+        <span id="savedBadge" class="saved-badge">✓ Saqlandi</span>
+    </div>
+
+    <!-- Video Area -->
+    <div class="video-container" id="videoContainer">
+        <video id="player" controls>
+            <source src="https://vjs.zencdn.net/v/oceans.mp4" type="video/mp4">
+            <source src="https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4" type="video/mp4">
+            <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+            Brauzeringiz video tegini qo'llab-quvvatlamaydi.
+        </video>
+    </div>
+
+    <!-- Controls Area -->
+    <div class="controls-area">
+        <div id="micBtn" class="mic-btn" title="Gapirish uchun bosing">🎤</div>
+        
+        <!-- Audio darajasi ko'rsatkich -->
+        <div class="audio-level-container">
+            <div id="audioLevelBar" class="audio-level-bar"></div>
+        </div>
+
+        <div id="actionStatus" class="status-text">Kutmoqda</div>
+        <div id="interimText" class="interim-text"></div>
+        <div id="speechInfo" class="speech-info">Mohir.ai STT — o'zbek tili uchun optimallashtirilgan</div>
+
+        <!-- Matn inputi doim ko'rinadi -->
+        <form class="fallback-controls" id="fallbackForm">
+            <input type="text" id="fallbackInput" placeholder="Matn yozing (masalan: pauza qil)..." autocomplete="off">
+            <button type="submit">Yuborish</button>
+        </form>
+    </div>
+
+    <!-- Log Panel -->
+    <div class="log-panel" id="logPanel">
+        <!-- Logs go here -->
+    </div>
+</div>
+
+<script>
+    // ===== DOM ELEMENTS =====
+    const wsStatusDot = document.getElementById('wsStatusDot');
+    const wsStatusText = document.getElementById('wsStatusText');
+    const connectForm = document.getElementById('connectForm');
+    const tokenInput = document.getElementById('tokenInput');
+    const video = document.getElementById('player');
+    const videoContainer = document.getElementById('videoContainer');
+    const micBtn = document.getElementById('micBtn');
+    const actionStatus = document.getElementById('actionStatus');
+    const interimText = document.getElementById('interimText');
+    const speechInfo = document.getElementById('speechInfo');
+    const audioLevelBar = document.getElementById('audioLevelBar');
+    const fallbackForm = document.getElementById('fallbackForm');
+    const fallbackInput = document.getElementById('fallbackInput');
+    const logPanel = document.getElementById('logPanel');
+    const mohirKeyInput = document.getElementById('mohirKeyInput');
+    const saveMohirKeyBtn = document.getElementById('saveMohirKeyBtn');
+    const savedBadge = document.getElementById('savedBadge');
+
+    // ===== STATE =====
+    let ws = null;
+    let isThinking = false;
+
+    // Mohir STT state
+    let mohirApiKey = localStorage.getItem('mohirApiKey') || 'b7a4aafd-c93d-4fcc-9c98-5c30cb382344:e97b9414-36ad-4f31-93df-89f8c2f84e26';
+    let mediaStream = null;
+    let mediaRecorder = null;
+    let audioContext = null;
+    let analyserNode = null;
+    let audioChunks = [];
+    let isListening = false;     // Mic tugmasi bosilganmi (umumiy holat)
+    let isRecording = false;     // MediaRecorder hozir yozyaptimi
+    let isProcessing = false;    // Mohir API ga yuborilmoqda
+    let speechDetected = false;  // Ovoz eshitildimi
+    let silenceTimer = null;
+    let vadAnimFrame = null;
+    let recordingStartTime = 0;
+
+    // VAD sozlamalari
+    const SILENCE_THRESHOLD = 20;    // Bu qiymatdan past = jimlik (shovqinni filtrlash uchun 15 dan 20 ga oshirildi)
+    const SILENCE_DURATION = 1500;   // Ovozdan keyin 1.5 soniya jimlik = gapirish tugadi
+    const MIN_RECORDING_MS = 400;    // 400ms dan qisqa audio yuborilmaydi
+
+    // ===== MOHIR API KEY =====
+    if (mohirApiKey) {
+        mohirKeyInput.value = mohirApiKey;
+        savedBadge.classList.add('show');
+    }
+
+    saveMohirKeyBtn.addEventListener('click', () => {
+        const key = mohirKeyInput.value.trim();
+        if (key) {
+            mohirApiKey = key;
+            localStorage.setItem('mohirApiKey', key);
+            savedBadge.classList.add('show');
+            addLog('info', 'Mohir API key saqlandi');
+            setTimeout(() => savedBadge.classList.remove('show'), 2000);
+        }
+    });
+
+    // ===== UTILITY FUNCTIONS =====
+    function getTimestamp() {
+        const now = new Date();
+        const pad = (n, width = 2) => String(n).padStart(width, '0');
+        return `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${pad(now.getMilliseconds(), 3)}`;
+    }
+
+    function addLog(type, message, isJson = false) {
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'log-time';
+        timeSpan.textContent = `[${getTimestamp()}]`;
+        entry.appendChild(timeSpan);
+
+        const textSpan = document.createElement('span');
+        
+        let prefix = '';
+        let className = '';
+
+        if (type === 'sent') {
+            prefix = '<- ';
+            className = 'log-sent';
+        } else if (type === 'recv') {
+            prefix = '-> ';
+            className = 'log-recv';
+        } else if (type === 'error') {
+            prefix = '⚠ ';
+            className = 'log-error';
+        } else {
+            prefix = '* ';
+            className = 'log-info';
+        }
+
+        textSpan.className = className;
+        textSpan.textContent = prefix + (isJson ? JSON.stringify(message) : message);
+        entry.appendChild(textSpan);
+
+        logPanel.prepend(entry);
+    }
+
+    // ===== WEBSOCKET =====
+    function connectWS(token = '') {
+        if (ws) {
+            ws.close();
+        }
+
+        const wsUrl = `ws://16.170.242.253:8000/ws/agent/test/?token=${token}`;
+
+        wsStatusDot.className = 'status-dot connecting';
+        wsStatusText.textContent = 'Ulanmoqda...';
+        addLog('info', `Ulanishga urinish: ${wsUrl}`);
+
+        try {
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                addLog('info', 'WebSocket TCP ulangan, backend tasdig\'i kutilmoqda');
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    addLog('recv', data, true);
+                    handleIncomingMessage(data);
+                } catch (e) {
+                    addLog('error', `Yaroqsiz JSON qabul qilindi: ${event.data}`);
+                }
+            };
+
+            ws.onclose = (event) => {
+                wsStatusDot.className = 'status-dot';
+                wsStatusText.textContent = 'Ulanmagan';
+                addLog('info', `WebSocket yopildi (kod: ${event.code})`);
+                ws = null;
+            };
+
+            ws.onerror = (error) => {
+                addLog('error', 'WebSocket xatoligi yuz berdi');
+                wsStatusDot.className = 'status-dot';
+                wsStatusText.textContent = 'Xato';
+            };
+        } catch (e) {
+            addLog('error', `WebSocket yaratishda xato: ${e.message}`);
+            wsStatusDot.className = 'status-dot';
+            wsStatusText.textContent = 'Ulanmagan';
+        }
+    }
+
+    // ===== UI HELPERS =====
+    function flashVideo() {
+        videoContainer.classList.add('flash');
+        setTimeout(() => {
+            videoContainer.classList.remove('flash');
+        }, 300);
+    }
+
+    function setStatus(text, type = 'normal') {
+        actionStatus.textContent = text;
+        if (type === 'error') {
+            actionStatus.style.color = 'var(--danger)';
+        } else if (type === 'success') {
+            actionStatus.style.color = 'var(--primary)';
+        } else {
+            actionStatus.style.color = 'var(--text-color)';
+        }
+    }
+
+    // ===== INCOMING WS MESSAGES =====
+    function handleIncomingMessage(msg) {
+        if (!msg || !msg.type) return;
+
+        switch (msg.type) {
+            case 'connected':
+                wsStatusDot.className = 'status-dot connected';
+                wsStatusText.textContent = 'Ulangan';
+                break;
+            case 'status':
+                if (msg.payload && msg.payload.state === 'thinking') {
+                    isThinking = true;
+                    setStatus('O\'ylayapman...');
+                }
+                break;
+            case 'action':
+                if (msg.payload && msg.payload.action) {
+                    isThinking = false;
+                    dispatchAction(msg.payload.action, msg.payload.params || {});
+                }
+                break;
+            case 'response':
+                if (msg.payload && msg.payload.text) {
+                    isThinking = false;
+                    setStatus(msg.payload.text, 'success');
+                }
+                break;
+            case 'error':
+                isThinking = false;
+                setStatus(msg.payload.message || 'Xatolik', 'error');
+                break;
+        }
+    }
+
+    // ===== ACTION DISPATCHER =====
+    function dispatchAction(actionName, params) {
+        setStatus(`Bajarildi: ${actionName}`, 'success');
+        flashVideo();
+
+        switch (actionName) {
+            case 'pause_video':
+                video.pause();
+                break;
+            case 'play_video':
+                video.play();
+                break;
+            case 'seek_forward':
+                video.currentTime += (params.seconds !== undefined ? params.seconds : 10);
+                break;
+            case 'seek_backward':
+                video.currentTime -= (params.seconds !== undefined ? params.seconds : 10);
+                break;
+            case 'seek_to_time':
+                if (params.seconds !== undefined) {
+                    video.currentTime = params.seconds;
+                }
+                break;
+            case 'set_volume':
+                if (params.value !== undefined) {
+                    video.volume = Math.max(0, Math.min(1, params.value));
+                }
+                break;
+            case 'increase_volume':
+                video.volume = Math.min(1, video.volume + (params.step !== undefined ? params.step : 0.1));
+                break;
+            case 'decrease_volume':
+                video.volume = Math.max(0, video.volume - (params.step !== undefined ? params.step : 0.1));
+                break;
+            case 'mute':
+                video.muted = true;
+                break;
+            case 'unmute':
+                video.muted = false;
+                break;
+            case 'toggle_fullscreen':
+                if (!document.fullscreenElement) {
+                    if (video.requestFullscreen) video.requestFullscreen();
+                    else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
+                } else {
+                    if (document.exitFullscreen) document.exitFullscreen();
+                    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                }
+                break;
+            case 'set_playback_speed':
+                if (params.speed !== undefined) {
+                    video.playbackRate = params.speed;
+                }
+                break;
+            case 'next_episode':
+            case 'previous_episode':
+            case 'restart_episode':
+                console.log(`(demo) ${actionName}`);
+                break;
+            case 'scroll_down':
+                let amountDown = 300;
+                if (params.amount === 'small') amountDown = 100;
+                if (params.amount === 'large') amountDown = 800;
+                window.scrollBy({ top: amountDown, behavior: 'smooth' });
+                break;
+            case 'scroll_up':
+                let amountUp = 300;
+                if (params.amount === 'small') amountUp = 100;
+                if (params.amount === 'large') amountUp = 800;
+                window.scrollBy({ top: -amountUp, behavior: 'smooth' });
+                break;
+            case 'scroll_to_bottom':
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                break;
+            case 'scroll_to_top':
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                break;
+            case 'refresh_page':
+                window.location.reload();
+                break;
+            default:
+                addLog('error', `Noma'lum action: ${actionName}`);
+                break;
+        }
+    }
+
+    // ===== SEND MESSAGE =====
+    function sendMessage(text) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            addLog('error', 'Xabar yuborib bo\'lmadi: Ulanish yo\'q');
+            setStatus('Xato: Ulanish yo\'q', 'error');
+            return;
+        }
+
+        const msg = { text: text };
+        ws.send(JSON.stringify(msg));
+        addLog('sent', msg, true);
+        setStatus('Kutmoqda...');
+    }
+
+    // ============================================================
+    //  MOHIR STT (Uzbekvoice.ai) — O'zbek tili uchun zo'r tanlov
+    // ============================================================
+
+    /**
+     * Oqim:
+     * 1. Mic bosadi → MediaRecorder + AudioContext boshlanadi
+     * 2. VAD (Voice Activity Detection) ovoz darajasini kuzatadi
+     * 3. Ovoz eshitiladi → speechDetected = true
+     * 4. 500ms jimlik → audio kesib olinadi
+     * 5. Audio blob → Mohir API (model: enhanced-stt)
+     * 6. Matn qaytadi → WebSocket'ga yuboriladi
+     * 7. Avtomatik qayta tinglash boshlanadi
+     */
+
+    // Mikrofon + AudioContext'ni tayyorlash
+    async function initAudio() {
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            });
+
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioContext.createMediaStreamSource(mediaStream);
+            analyserNode = audioContext.createAnalyser();
+            analyserNode.fftSize = 256;
+            analyserNode.smoothingTimeConstant = 0.3;
+            source.connect(analyserNode);
+
+            addLog('info', '🎤 Mikrofon ulandi — Mohir STT tayyor');
+            return true;
+        } catch (e) {
+            addLog('error', `Mikrofon xatosi: ${e.message}`);
+            setStatus('Mikrofonga ruxsat bering!', 'error');
+            speechInfo.textContent = 'Brauzer sozlamalaridan mikrofonga ruxsat bering';
+            return false;
+        }
+    }
+
+    // Audio darajasini hisoblash (0-100)
+    function getAudioLevel() {
+        const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+        analyserNode.getByteFrequencyData(dataArray);
+        const sum = dataArray.reduce((a, b) => a + b, 0);
+        return sum / dataArray.length;
+    }
+
+    // Audio darajasini vizual ko'rsatish
+    function updateAudioLevelUI(level) {
+        const percent = Math.min(100, (level / 50) * 100);
+        audioLevelBar.style.width = percent + '%';
+        if (level > SILENCE_THRESHOLD) {
+            audioLevelBar.classList.add('speaking');
+        } else {
+            audioLevelBar.classList.remove('speaking');
+        }
+    }
+
+    // Yozishni boshlash
+    function startRecording() {
+        if (!mediaStream || isProcessing) return;
+
+        audioChunks = [];
+        speechDetected = false;
+        isRecording = true;
+        recordingStartTime = Date.now();
+
+        // MediaRecorder yaratish — har safar yangi (oldingisi stop bo'lgandan keyin qayta ishlatish mumkin emas)
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+            ? 'audio/webm;codecs=opus' 
+            : 'audio/webm';
+
+        mediaRecorder = new MediaRecorder(mediaStream, { mimeType });
+
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+            const duration = Date.now() - recordingStartTime;
+
+            // Juda qisqa yoki ovoz eshitilmagan audio yuborilmaydi
+            if (!speechDetected || duration < MIN_RECORDING_MS) {
+                if (isListening && !isProcessing) {
+                    // Qayta tinglash
+                    setTimeout(() => startRecording(), 100);
+                }
+                return;
+            }
+
+            const audioBlob = new Blob(audioChunks, { type: mimeType });
+            audioChunks = [];
+
+            addLog('info', `🔊 Audio yozildi: ${(audioBlob.size / 1024).toFixed(1)}KB, ${(duration / 1000).toFixed(1)}s`);
+
+            // Mohir API ga yuborish
+            sendToMohir(audioBlob);
+        };
+
+        mediaRecorder.start();
+        startVADMonitoring();
+
+        interimText.textContent = 'Gapiring...';
+        speechInfo.textContent = '🟢 Tinglayapman (Mohir STT)';
+    }
+
+    // VAD — ovoz darajasini monitoring qilish
+    function startVADMonitoring() {
+        function checkLevel() {
+            if (!isRecording) return;
+
+            const level = getAudioLevel();
+            updateAudioLevelUI(level);
+
+            if (level > SILENCE_THRESHOLD) {
+                // Ovoz bor
+                speechDetected = true;
+                interimText.textContent = '🔴 Gapirmoqda...';
+
+                // Jimlik taymerini bekor qilish
+                if (silenceTimer) {
+                    clearTimeout(silenceTimer);
+                    silenceTimer = null;
+                }
+            } else if (speechDetected && !silenceTimer) {
+                // Ovoz bor edi, endi jimlik — taymer boshlash
+                interimText.textContent = '⏳ Jimlik aniqlanmoqda...';
+                silenceTimer = setTimeout(() => {
+                    // 500ms jimlik — gapirish tugadi, audio'ni kesish
+                    silenceTimer = null;
+                    if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
+                        isRecording = false;
+                        mediaRecorder.stop();
+                    }
+                }, SILENCE_DURATION);
+            }
+
+            vadAnimFrame = requestAnimationFrame(checkLevel);
+        }
+
+        vadAnimFrame = requestAnimationFrame(checkLevel);
+    }
+
+    // VAD monitoringni to'xtatish
+    function stopVADMonitoring() {
+        if (vadAnimFrame) {
+            cancelAnimationFrame(vadAnimFrame);
+            vadAnimFrame = null;
+        }
+        if (silenceTimer) {
+            clearTimeout(silenceTimer);
+            silenceTimer = null;
+        }
+        audioLevelBar.style.width = '0%';
+        audioLevelBar.classList.remove('speaking');
+    }
+
+    // Mohir API ga audio yuborish
+    async function sendToMohir(audioBlob) {
+        if (!mohirApiKey) {
+            addLog('error', 'Mohir API key kiritilmagan!');
+            setStatus('Mohir API key kerak!', 'error');
+            if (isListening) setTimeout(() => startRecording(), 500);
+            return;
+        }
+
+        isProcessing = true;
+        micBtn.classList.remove('listening');
+        micBtn.classList.add('processing');
+        interimText.textContent = '';
+        setStatus('🔄 Ovozni aniqlayapman...');
+        speechInfo.textContent = '⏳ Mohir STT — javob kutilmoqda...';
+
+        const formData = new FormData();
+        formData.append('file', audioBlob, 'recording.webm');
+        formData.append('language', 'uz');
+        formData.append('model', 'enhanced-stt');
+        formData.append('blocking', 'true');
+        formData.append('return_offsets', 'false');
+        formData.append('run_diarization', 'false');
+
+        const startTime = performance.now();
+
+        try {
+            const response = await fetch('https://uzbekvoice.ai/api/v1/stt', {
+                method: 'POST',
+                headers: {
+                    'Authorization': mohirApiKey // "Bearer" so'zisiz
+                },
+                body: formData
+            });
+
+            const elapsed = Math.round(performance.now() - startTime);
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                const errMsg = errData.error?.message || errData.message || `HTTP ${response.status}`;
+                throw new Error(errMsg);
+            }
+
+            const data = await response.json();
+            // Mohir API qaytaradigan tuzilmani tekshiramiz (odatda data.text yoki data.result.text)
+            const text = data.text || (data.result && data.result.text) || '';
+
+            if (text && text.trim()) {
+                const finalStr = text.trim();
+                addLog('info', `✅ Mohir: "${finalStr}" (${elapsed}ms)`);
+                speechInfo.textContent = `✅ "${finalStr}" — ${elapsed}ms`;
+                sendMessage(finalStr);
+            } else {
+                addLog('info', `Mohir: bo'sh natija (${elapsed}ms)`);
+                speechInfo.textContent = `Ovoz tanilmadi (${elapsed}ms)`;
+            }
+        } catch (e) {
+            addLog('error', `Mohir xatosi: ${e.message}`);
+            setStatus(`Mohir xatosi`, 'error');
+            speechInfo.textContent = `❌ ${e.message}`;
+        }
+
+        isProcessing = false;
+        micBtn.classList.remove('processing');
+
+        // Agar hali ham tinglash rejimida bo'lsa — qayta boshlash
+        if (isListening) {
+            micBtn.classList.add('listening');
+            setTimeout(() => startRecording(), 200);
+        }
+    }
+
+    // ===== MIC BUTTON =====
+    micBtn.addEventListener('click', async () => {
+        if (isListening) {
+            // TO'XTATISH
+            isListening = false;
+            isRecording = false;
+            stopVADMonitoring();
+
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+
+            micBtn.classList.remove('listening', 'processing');
+            if (!isThinking) setStatus('Kutmoqda');
+            interimText.textContent = '';
+            speechInfo.textContent = 'To\'xtatildi';
+            audioLevelBar.style.width = '0%';
+        } else {
+            // BOSHLASH
+            if (!mohirApiKey) {
+                addLog('error', 'Avval Mohir API key kiriting!');
+                setStatus('Mohir API key kiriting!', 'error');
+                mohirKeyInput.focus();
+                return;
+            }
+
+            // Mikrofon hali ulanmaganmi
+            if (!mediaStream) {
+                const ok = await initAudio();
+                if (!ok) return;
+            }
+
+            // AudioContext suspended bo'lsa (brauzer talabi)
+            if (audioContext && audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+
+            isListening = true;
+            micBtn.classList.add('listening');
+            setStatus('Tinglayapman...');
+            addLog('info', '🎤 Tinglash boshlandi (Mohir STT)');
+
+            startRecording();
+        }
+    });
+
+    // ===== FORM HANDLERS =====
+    connectForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        connectWS(tokenInput.value.trim());
+    });
+
+    fallbackForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = fallbackInput.value.trim();
+        if (text) {
+            sendMessage(text);
+            fallbackInput.value = '';
+        }
+    });
+
+    // ===== INIT =====
+    window.addEventListener('DOMContentLoaded', () => {
+        connectWS('');
+    });
+</script>
+</body>
+</html>
