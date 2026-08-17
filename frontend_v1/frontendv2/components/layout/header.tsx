@@ -13,21 +13,6 @@ export function Header() {
 
   const [query, setQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
-  const [profileAvatar, setProfileAvatar] = useState('')
-
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const loadAvatar = () => setProfileAvatar(localStorage.getItem('streamora_profile_avatar') || '')
-      loadAvatar()
-      // Listen for updates from other tabs or manual dispatches
-      window.addEventListener('storage', loadAvatar)
-      window.addEventListener('profile_updated', loadAvatar)
-      return () => {
-        window.removeEventListener('storage', loadAvatar)
-        window.removeEventListener('profile_updated', loadAvatar)
-      }
-    }
-  }, [])
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault()
@@ -134,9 +119,9 @@ export function Header() {
             title="Profilim"
             className="flex size-10 items-center justify-center rounded-full overflow-hidden bg-gradient-to-tr from-[#0D4D38] to-[#00FFA3] font-display text-sm font-extrabold text-[#070A0C] ring-2 ring-[#00FFA3]/25 shadow-[0_0_14px_rgba(0,255,163,0.28)] transition hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00FFA3]"
           >
-            {profileAvatar ? (
+            {user?.picture ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={profileAvatar} alt="Profil" className="size-full object-cover" />
+              <img src={user.picture} alt="Profil" className="size-full object-cover" />
             ) : (
               userInitials
             )}

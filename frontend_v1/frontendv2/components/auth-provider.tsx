@@ -130,8 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
     if (typeof window !== 'undefined') {
       localStorage.removeItem('streamora_local_profile')
-      localStorage.removeItem('streamora_profile_avatar')
-      window.dispatchEvent(new Event('profile_updated'))
+      // No more localStorage for avatar!
     }
   }, [])
 

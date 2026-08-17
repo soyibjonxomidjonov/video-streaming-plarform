@@ -33,9 +33,11 @@ export default function ProfileClient() {
       setFirstName(user.first_name || '')
       setLastName(user.last_name || '')
       setAge(user.age ? String(user.age) : '')
-    }
-    if (typeof window !== 'undefined') {
-      setProfileAvatar(localStorage.getItem('streamora_profile_avatar') || '')
+      
+      // Load avatar from backend directly!
+      if (!profileAvatar && user.picture) {
+        setProfileAvatar(user.picture)
+      }
     }
   }, [user])
 
@@ -73,17 +75,23 @@ export default function ProfileClient() {
     setSaving(true)
     setNotice(null)
     try {
-      if (typeof window !== 'undefined') {
-        const localProfile = {
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          ...(age ? { age: Number(age) } : {}),
+      // Backendga FormData orqali yuborish (Rasm ham ketadi)
+      if (user) {
+        const formData = new FormData()
+        formData.append('first_name', firstName.trim())
+        formData.append('last_name', lastName.trim())
+        if (age) formData.append('age', String(age))
+
+        // Agar yangi rasm tanlangan bo'lsa (base64)
+        if (profileAvatar && profileAvatar.startsWith('data:')) {
+          const res = await fetch(profileAvatar)
+          const blob = await res.blob()
+          formData.append('picture', blob, 'avatar.webp')
         }
-        localStorage.setItem('streamora_local_profile', JSON.stringify(localProfile))
-        if (profileAvatar) {
-          localStorage.setItem('streamora_profile_avatar', profileAvatar)
-        }
+
+        await api.updateUser('me', formData)
       }
+
       await refresh()
       showToast("Profil muvaffaqiyatli saqlandi ✓")
     } catch {
@@ -96,10 +104,63 @@ export default function ProfileClient() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    // 3 MB limit (3 * 1024 * 1024 bytes)
+    if (file.size > 3 * 1024 * 1024) {
+      showToast("Rasm hajmi 3 MB dan oshmasligi kerak!")
+      return
+    }
+
     const reader = new FileReader()
     reader.onloadend = () => {
-      const result = reader.result as string
-      setProfileAvatar(result)
+      const img = new Image()
+      
+      const saveAndDispatch = (base64Str: string) => {
+        setProfileAvatar(base64Str)
+        try {
+          localStorage.setItem('streamora_profile_avatar', base64Str)
+          window.dispatchEvent(new Event('profile_updated'))
+        } catch (err) {
+          console.error("Rasm hajmi juda katta, saqlab bo'lmadi")
+        }
+      }
+
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas')
+          const MAX_SIZE = 256
+          let width = img.width
+          let height = img.height
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width
+              width = MAX_SIZE
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height
+              height = MAX_SIZE
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+
+          const compressedBase64 = canvas.toDataURL('image/webp', 0.8)
+          saveAndDispatch(compressedBase64)
+        } catch (err) {
+          saveAndDispatch(reader.result as string)
+        }
+      }
+      
+      img.onerror = () => {
+        saveAndDispatch(reader.result as string)
+      }
+      
+      img.src = reader.result as string
     }
     reader.readAsDataURL(file)
   }
