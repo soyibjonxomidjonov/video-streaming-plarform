@@ -15,17 +15,29 @@ jobs:
                   username: ec2-user
                   key: ${{ secrets.EC2_SSH_KEY }}
                   script: |
-                      cd /home/ec2-user/video-streaming-plarform  
+                      cd /home/ec2-user/video-streaming-plarform
                       git fetch origin main
-                      sudo chown -R ec2-user:ec2-user .        
+                      sudo chown -R ec2-user:ec2-user .
                       git reset --hard origin/main
 
                       if git diff HEAD~1 HEAD --name-only | grep -qE "requirements.txt|Dockerfile|docker-compose.yml|admin-panel/"; then
-                        docker-compose up -d --force-recreate --build
+                        docker-compose build django django2 django3 celery
+                        docker-compose run --rm django python manage.py migrate
+                        docker-compose run --rm django python manage.py collectstatic --noinput
+                        docker-compose up -d --no-deps --force-recreate django
+                        sleep 5
+                        docker-compose up -d --no-deps --force-recreate django2
+                        sleep 5
+                        docker-compose up -d --no-deps --force-recreate django3
+                        docker-compose up -d --no-deps --force-recreate celery
                       else
-                        docker-compose up -d --force-recreate
+                        docker-compose run --rm django python manage.py migrate
+                        docker-compose run --rm django python manage.py collectstatic --noinput
+                        docker-compose up -d --no-deps --force-recreate django
+                        sleep 5
+                        docker-compose up -d --no-deps --force-recreate django2
+                        sleep 5
+                        docker-compose up -d --no-deps --force-recreate django3
                       fi
-                      docker-compose exec -T django python manage.py migrate
-                      docker-compose exec -T django python manage.py collectstatic --noinput
 
                       docker image prune -f
