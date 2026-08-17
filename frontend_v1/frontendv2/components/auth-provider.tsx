@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (payload.user_id) {
           try {
-            const userData = await api.user(payload.user_id)
+            const userData = await api.user('me')
             fallbackUser = {
               ...fallbackUser,
               ...(userData || {}),
