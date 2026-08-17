@@ -25,7 +25,12 @@ export default function AdminDashboardPage() {
       if (s.status === 'fulfilled') setSeries(unwrapList(s.value))
       if (g.status === 'fulfilled') setGenres(unwrapList(g.value))
       if (u.status === 'fulfilled') setUsers(unwrapList(u.value))
-      setHealth(h.status === 'fulfilled' ? h.value || 'OK' : 'Online (Django/Go Streamer)')
+      
+      let healthText = 'Online (Django/Go Streamer)'
+      if (h.status === 'fulfilled' && h.value) {
+        healthText = h.value.includes('<html') ? 'Online (HTML HTML)' : h.value
+      }
+      setHealth(healthText)
       setLoading(false)
     })
   }, [])

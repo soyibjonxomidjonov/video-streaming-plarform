@@ -43,16 +43,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      {/* Admin Top Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[rgba(0,255,163,0.12)] pb-6">
+    <div className="flex min-h-screen flex-col lg:flex-row bg-[#070A0C]">
+      {/* Sidebar for Desktop / Top Header for Mobile */}
+      <aside className="w-full lg:w-64 shrink-0 border-b lg:border-b-0 lg:border-r border-[rgba(0,255,163,0.12)] p-4 sm:p-6 lg:p-8 lg:min-h-full flex flex-col gap-6 bg-[#0B1013] z-10 sticky top-0 lg:h-screen overflow-y-auto">
         <div>
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1.5 rounded-lg border border-[rgba(0,255,163,0.3)] bg-[rgba(0,255,163,0.15)] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#00FFA3]">
               <ShieldAlert size={12} aria-hidden="true" /> Boshqaruv
             </span>
           </div>
-          <h1 className="mt-2 font-display text-2xl font-black text-[#F8FAFC] sm:text-3xl">
+          <h1 className="mt-2 font-display text-2xl font-black text-[#F8FAFC]">
             Admin Console
           </h1>
         </div>
@@ -63,34 +63,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         >
           <ArrowLeft size={14} aria-hidden="true" /> Asosiy saytga qaytish
         </Link>
-      </div>
 
-      {/* Admin Subnav Tabs */}
-      <div className="scroll-row mb-8 flex gap-2 rounded-2xl border border-[rgba(0,255,163,0.15)] bg-[#0F171A] p-1.5 overflow-x-auto shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
-        {ADMIN_LINKS.map((item) => {
-          const active = isActive(item.href, item.exact)
-          const Icon = item.icon
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all focus-visible:outline-2 focus-visible:outline-[#00FFA3] ${
-                active
-                  ? 'bg-[#00FFA3] text-[#070A0C] shadow-[0_0_15px_rgba(0,255,163,0.3)]'
-                  : 'text-[#64748B] hover:bg-[#0B1013] hover:text-[#F8FAFC]'
-              }`}
-            >
-              <Icon size={15} aria-hidden="true" />
-              <span>{item.label}</span>
-            </Link>
-          )
-        })}
-      </div>
+        {/* Navigation - vertical on desktop, horizontal on mobile */}
+        <nav className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 scroll-row">
+          {ADMIN_LINKS.map((item) => {
+            const active = isActive(item.href, item.exact)
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex shrink-0 items-center gap-3 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-bold transition-all focus-visible:outline-2 focus-visible:outline-[#00FFA3] ${
+                  active
+                    ? 'bg-[#00FFA3] text-[#070A0C] shadow-[0_0_15px_rgba(0,255,163,0.3)]'
+                    : 'text-[#64748B] hover:bg-[#141F24] hover:text-[#F8FAFC]'
+                }`}
+              >
+                <Icon size={18} aria-hidden="true" />
+                <span>{item.label}</span>
+              </Link>
+            )
+          })}
+        </nav>
+      </aside>
 
-      {/* Admin Content View */}
-      <div>
+      {/* Main Content View */}
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 min-w-0 overflow-x-hidden">
         {children}
-      </div>
+      </main>
     </div>
   )
 }

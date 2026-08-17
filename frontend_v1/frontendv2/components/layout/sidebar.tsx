@@ -11,6 +11,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
 import { Logo } from '@/components/ui/logo'
+import { API_BASE, getImageUrl } from '@/lib/api'
 
 type NavItem = {
   icon: LucideIcon
@@ -159,7 +160,12 @@ export function Sidebar() {
               title="Mening profilim"
               className="flex size-11 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0D4D38] to-[#00FFA3] font-display text-xs font-extrabold text-[#070A0C] shadow-[0_0_12px_rgba(0,255,163,0.28)] transition hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00FFA3]"
             >
-              {userInitials}
+              {user?.picture ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={getImageUrl(user.picture)} alt="Profil" className="size-full object-cover" />
+              ) : (
+                userInitials
+              )}
             </Link>
           ) : (
             <Link

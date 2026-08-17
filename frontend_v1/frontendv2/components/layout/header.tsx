@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Search, X, ShieldAlert } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
 import { Logo } from '@/components/ui/logo'
+import { API_BASE, getImageUrl } from '@/lib/api'
 
 export function Header() {
   const router = useRouter()
@@ -121,7 +122,7 @@ export function Header() {
           >
             {user?.picture ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.picture} alt="Profil" className="size-full object-cover" />
+              <img src={getImageUrl(user.picture)} alt="Profil" className="size-full object-cover" />
             ) : (
               userInitials
             )}
