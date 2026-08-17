@@ -6,13 +6,19 @@ from apps.main.models.series import (Series, Episode, Rating_Series, Comment_Ser
 
 
 class SeriesSerializerConfig(serializers.ModelSerializer):
+    username = serializers.SerializerMethodField()
+
+
     class Meta:
         model = Series
         fields = "__all__"
         read_only_fields = ("id", "created_at")
 
 
-
+    def get_username(self, obj):
+        if obj.user:
+            return obj.user.first_name or obj.user.email.split('@')[0]
+        return "Foydalanuvchi"
 
 class EpisodeSerializerConfig(serializers.ModelSerializer):
     class Meta:
