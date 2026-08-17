@@ -8,7 +8,7 @@ from apps.main.models.series import (Series, Episode, Rating_Series, Comment_Ser
 class SeriesSerializerConfig(serializers.ModelSerializer):
     username = serializers.SerializerMethodField()
 
-
+    genres = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
     class Meta:
         model = Series
         fields = "__all__"

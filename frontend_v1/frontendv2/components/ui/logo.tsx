@@ -11,6 +11,11 @@ import React from 'react'
  */
 
 export function Logo({ className = 'size-11' }: { className?: string }) {
+  const id = React.useId()
+  const lgId = `lg-primary-${id}`
+  const glowId = `glow-sm-${id}`
+  const clipId = `rounded-clip-${id}`
+
   return (
     <div className={`relative shrink-0 ${className}`} aria-hidden="true">
       <svg
@@ -21,13 +26,13 @@ export function Logo({ className = 'size-11' }: { className?: string }) {
       >
         <defs>
           {/* Primary emerald gradient */}
-          <linearGradient id="lg-primary" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+          <linearGradient id={lgId} x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
             <stop offset="0%" stopColor="#80FFCB" />
             <stop offset="55%" stopColor="#00FFA3" />
             <stop offset="100%" stopColor="#00CC82" />
           </linearGradient>
           {/* Glow filter */}
-          <filter id="glow-sm" x="-30%" y="-30%" width="160%" height="160%">
+          <filter id={glowId} x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
@@ -35,7 +40,7 @@ export function Logo({ className = 'size-11' }: { className?: string }) {
             </feMerge>
           </filter>
           {/* Background clip */}
-          <clipPath id="rounded-clip">
+          <clipPath id={clipId}>
             <rect x="0" y="0" width="48" height="48" rx="12" ry="12" />
           </clipPath>
         </defs>
@@ -64,35 +69,35 @@ export function Logo({ className = 'size-11' }: { className?: string }) {
         {/* ── S letterform ── */}
         {/* Top bar */}
         <rect x="8" y="9" width="12" height="3" rx="1.5"
-          fill="url(#lg-primary)" filter="url(#glow-sm)" />
+          fill={`url(#${lgId})`} filter={`url(#${glowId})`} />
         {/* Middle bar */}
         <rect x="8" y="22.5" width="12" height="3" rx="1.5"
-          fill="url(#lg-primary)" filter="url(#glow-sm)" />
+          fill={`url(#${lgId})`} filter={`url(#${glowId})`} />
         {/* Bottom bar */}
         <rect x="8" y="36" width="12" height="3" rx="1.5"
-          fill="url(#lg-primary)" filter="url(#glow-sm)" />
+          fill={`url(#${lgId})`} filter={`url(#${glowId})`} />
         {/* Top-left vertical */}
         <rect x="8" y="9" width="3" height="7.5" rx="1.5"
-          fill="url(#lg-primary)" filter="url(#glow-sm)" />
+          fill={`url(#${lgId})`} filter={`url(#${glowId})`} />
         {/* Bottom-right vertical */}
         <rect x="17" y="25.5" width="3" height="13.5" rx="1.5"
-          fill="url(#lg-primary)" filter="url(#glow-sm)" />
+          fill={`url(#${lgId})`} filter={`url(#${glowId})`} />
 
         {/* ── M letterform ── */}
         {/* Left vertical */}
         <rect x="27" y="9" width="3" height="30" rx="1.5"
-          fill="url(#lg-primary)" filter="url(#glow-sm)" />
+          fill={`url(#${lgId})`} filter={`url(#${glowId})`} />
         {/* Right vertical */}
         <rect x="37" y="9" width="3" height="30" rx="1.5"
-          fill="url(#lg-primary)" filter="url(#glow-sm)" />
+          fill={`url(#${lgId})`} filter={`url(#${glowId})`} />
         {/* Left diagonal (top-left to center-bottom) */}
         <line x1="27.5" y1="10" x2="33.5" y2="26"
-          stroke="url(#lg-primary)" strokeWidth="3" strokeLinecap="round"
-          filter="url(#glow-sm)" />
+          stroke={`url(#${lgId})`} strokeWidth="3" strokeLinecap="round"
+          filter={`url(#${glowId})`} />
         {/* Right diagonal (top-right to center-bottom) */}
         <line x1="39.5" y1="10" x2="33.5" y2="26"
-          stroke="url(#lg-primary)" strokeWidth="3" strokeLinecap="round"
-          filter="url(#glow-sm)" />
+          stroke={`url(#${lgId})`} strokeWidth="3" strokeLinecap="round"
+          filter={`url(#${glowId})`} />
       </svg>
     </div>
   )

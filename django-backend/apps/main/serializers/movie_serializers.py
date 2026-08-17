@@ -6,6 +6,9 @@ from apps.main.models.movies import Movie, Rating_Movie, Comment_Movie, WatchPro
 
 
 class MovieSerializerConfig(serializers.ModelSerializer):
+
+    genres = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
+
     class Meta:
         model = Movie
         fields = "__all__"
