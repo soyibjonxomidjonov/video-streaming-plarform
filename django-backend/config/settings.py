@@ -128,6 +128,7 @@ DATABASES = {
         'PASSWORD': os.environ.get('USER_PASSWORD'), #user paroli
         'HOST': os.environ.get("DATABASE_HOST"), #bu yerda host beriladi
         'PORT': os.environ.get('PORT'), #va post yoziladi va tayyor
+        'CONN_MAX_AGE': 600,  # ulanish 600 soniya (10 daqiqa) saqlanadi
     }
 }
 
