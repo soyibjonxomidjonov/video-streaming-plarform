@@ -193,7 +193,11 @@ export default function ProfileClient() {
           <div className="size-28 sm:size-32 rounded-full border-2 border-[#00FFA3] shadow-[0_0_30px_rgba(0,255,163,0.3)] overflow-hidden">
             {profileAvatar ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={getImageUrl(profileAvatar)} alt="Avatar" className="size-full object-cover" />
+              <img 
+                src={getImageUrl(profileAvatar)} 
+                alt="Avatar" 
+                className="size-full object-cover" 
+              />
             ) : (
               <div className="flex size-full items-center justify-center bg-gradient-to-br from-[#0D4D38] to-[#00FFA3]">
                 <span className="font-display text-4xl font-black text-[#070A0C]">

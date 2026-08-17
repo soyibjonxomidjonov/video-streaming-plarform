@@ -122,7 +122,11 @@ export function Header() {
           >
             {user?.picture ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={getImageUrl(user.picture)} alt="Profil" className="size-full object-cover" />
+              <img 
+                src={getImageUrl(user.picture)} 
+                alt="Profil" 
+                className="size-full object-cover" 
+              />
             ) : (
               userInitials
             )}
