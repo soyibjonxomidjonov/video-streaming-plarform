@@ -1,3 +1,4 @@
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from apps.main.models.misc import Genre
 
@@ -9,6 +10,14 @@ class Series(models.Model):
     poster_image = models.ImageField(upload_to="posters/series/")
     genres = models.ManyToManyField(Genre, related_name="series_set")
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            GinIndex(fields=['title'], name='series_title_trgm', opclasses=['gin_trgm_ops']),
+            GinIndex(fields=['description'], name='series_desc_trgm', opclasses=['gin_trgm_ops']),
+        ]
+
+
 
     def __str__(self):
         return self.title

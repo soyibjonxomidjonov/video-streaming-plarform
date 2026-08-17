@@ -78,7 +78,7 @@ class EmailLoginView(viewsets.ViewSet):
                 subject="Verification email",
                 message=f"Tastiqlash kodingiz",
                 email=email,
-                fail_silently=True,
+                fail_silently=False,
                 verification_code=verification_code
 
             )
@@ -149,7 +149,7 @@ class EmailLoginView(viewsets.ViewSet):
                 subject="Verification email",
                 message=f"Tastiqlash kodingiz",
                 email=email,
-                fail_silently=True,
+                fail_silently=False,
                 verification_code=verification_code
 
             )

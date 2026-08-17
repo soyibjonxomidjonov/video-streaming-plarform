@@ -1,6 +1,8 @@
 from django.db import models
 from apps.main.models.misc import Genre
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex
+
 
 class Movie(models.Model):
     title = models.CharField(max_length=250, null=False, blank=False)
@@ -20,6 +22,13 @@ class Movie(models.Model):
     last_accessed_at = models.DateTimeField(blank=True, null=True)  # ERD'da yo'q, LRU uchun
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            GinIndex(fields=['title'], name='movie_title_trgm', opclasses=['gin_trgm_ops']),
+            GinIndex(fields=['description'], name='movie_desc_trgm', opclasses=['gin_trgm_ops']),
+            GinIndex(fields=['telegram_channel'], name='movie_tgchan_trgm', opclasses=['gin_trgm_ops']),
+        ]
 
     def __str__(self):
         return self.title

@@ -28,7 +28,7 @@ class CustomPagination(PageNumberPagination):
 class MovieViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStaffOrReadOnly]
-    queryset = Movie.objects.all()
+    queryset = Movie.objects.prefetch_related('genres')
     serializer_class = MovieSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
     filterset_class = MovieFilter
@@ -54,7 +54,7 @@ class MovieViewSet(viewsets.ModelViewSet):
 class Comment_MovieViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsOwnerOrReadOnly]
-    queryset = Comment_Movie.objects.all()
+    queryset = Comment_Movie.objects.select_related('user', 'movie')
     serializer_class = Comment_MovieSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
     filterset_class = CommentMovieFilter
@@ -67,7 +67,7 @@ class Comment_MovieViewSet(viewsets.ModelViewSet):
 class Rating_MovieViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsOwnerOrReadOnly]
-    queryset = Rating_Movie.objects.all()
+    queryset = Rating_Movie.objects.select_related('user', 'movie')
     serializer_class = Rating_MovieSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
     filterset_class = RatingMovieFilter
@@ -81,7 +81,7 @@ class Rating_MovieViewSet(viewsets.ModelViewSet):
 class Favorites_MovieViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsOwnerOrReadOnly]
-    queryset = Favorites_Movie.objects.all()
+    queryset = Favorites_Movie.objects.select_related('user', 'movie')
     serializer_class = Favorites_MovieSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
     filterset_class = FavoritesMovieFilter
@@ -96,7 +96,7 @@ class Favorites_MovieViewSet(viewsets.ModelViewSet):
 class WatchProgress_MovieViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsOwnerOrReadOnly]
-    queryset = WatchProgress_Movie.objects.all()
+    queryset = WatchProgress_Movie.objects.select_related('user', 'movie')
     serializer_class = WatchProgress_MovieSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
     filterset_class = WatchProgressMovieFilter

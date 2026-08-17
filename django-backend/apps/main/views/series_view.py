@@ -29,7 +29,7 @@ class CustomPagination(PageNumberPagination):
 class SeriesViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStaffOrReadOnly]
-    queryset = Series.objects.all()
+    queryset = Series.objects.prefetch_related('genres')
     serializer_class = SeriesSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
     filterset_class = SeriesFilter
@@ -39,7 +39,7 @@ class SeriesViewSet(viewsets.ModelViewSet):
 class EpisodeViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStaffOrReadOnly]
-    queryset = Episode.objects.all()
+    queryset = Episode.objects.select_related('series')
     serializer_class = EpisodeSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
     filterset_class = EpisodeFilter
@@ -64,7 +64,7 @@ class EpisodeViewSet(viewsets.ModelViewSet):
 class Rating_SeriesViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsOwnerOrReadOnly]
-    queryset = Rating_Series.objects.all()
+    queryset = Rating_Series.objects.select_related('user', 'series')
     serializer_class = Rating_SeriesSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
     filterset_class = RatingSeriesFilter
@@ -78,7 +78,7 @@ class Rating_SeriesViewSet(viewsets.ModelViewSet):
 class Comment_SeriesViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsOwnerOrReadOnly]
-    queryset = Comment_Series.objects.all()
+    queryset = Comment_Series.objects.select_related('user', 'series')
     serializer_class = Comment_SeriesSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
     filterset_class = CommentSeriesFilter
@@ -93,7 +93,7 @@ class Comment_SeriesViewSet(viewsets.ModelViewSet):
 class Favorites_SeriesViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsOwnerOrReadOnly]
-    queryset = Favorites_Series.objects.all()
+    queryset = Favorites_Series.objects.select_related('user', 'series')
     serializer_class = Favorites_SeriesSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
     filterset_class = FavoritesSeriesFilter
@@ -107,7 +107,7 @@ class Favorites_SeriesViewSet(viewsets.ModelViewSet):
 class WatchProgress_EpisodeViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsOwnerOrReadOnly]
-    queryset = WatchProgress_Episode.objects.all()
+    queryset = WatchProgress_Episode.objects.select_related('user', 'episode', 'episode__series')
     serializer_class = WatchProgress_EpisodeSerializerConfig
     filter_backends = (django_filters.DjangoFilterBackend, filters.SearchFilter)
     filterset_class = WatchProgressEpisodeFilter
