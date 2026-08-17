@@ -6,7 +6,6 @@ from apps.main.models.series import (Series, Episode, Rating_Series, Comment_Ser
 
 
 class SeriesSerializerConfig(serializers.ModelSerializer):
-    username = serializers.SerializerMethodField()
 
     genres = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
     class Meta:
@@ -15,10 +14,6 @@ class SeriesSerializerConfig(serializers.ModelSerializer):
         read_only_fields = ("id", "created_at")
 
 
-    def get_username(self, obj):
-        if obj.user:
-            return obj.user.first_name or obj.user.email.split('@')[0]
-        return "Foydalanuvchi"
 
 class EpisodeSerializerConfig(serializers.ModelSerializer):
     class Meta:
@@ -37,11 +32,17 @@ class Rating_SeriesSerializerConfig(serializers.ModelSerializer):
 
 
 class Comment_SeriesSerializerConfig(serializers.ModelSerializer):
+    username = serializers.SerializerMethodField()
+
     class Meta:
         model = Comment_Series
         fields = "__all__"
         read_only_fields = ("id", "created_at", "user")
 
+    def get_username(self, obj):
+        if obj.user:
+            return obj.user.first_name or obj.user.email.split('@')[0]
+        return "Foydalanuvchi"
 
 
 class WatchProgress_EpisodeSerializerConfig(serializers.ModelSerializer):
