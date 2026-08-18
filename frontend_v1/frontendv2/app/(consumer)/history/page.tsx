@@ -35,8 +35,44 @@ export default function HistoryPage() {
           api.historySeries(),
         ])
         if (!active) return
-        if (mRes.status === 'fulfilled') setMovieHistory(unwrapList(mRes.value))
-        if (sRes.status === 'fulfilled') setSeriesHistory(unwrapList(sRes.value))
+        
+        let mList = unwrapList(mRes.value)
+        let sList = unwrapList(sRes.value)
+        
+        // Fetch detailed movie info using id__in filter
+        const missingMovieIds = mList.filter(h => typeof h.movie === 'number').map(h => h.movie as number)
+        if (missingMovieIds.length > 0) {
+          try {
+            const moviesData = await api.movies(`id__in=${missingMovieIds.join(',')}`)
+            const movies = unwrapList(moviesData)
+            mList = mList.map(h => {
+              if (typeof h.movie === 'number') {
+                const detail = movies.find(m => m.id === h.movie)
+                if (detail) return { ...h, movie: detail }
+              }
+              return h
+            })
+          } catch { /* ignore */ }
+        }
+        
+        // Fetch detailed series info using id__in filter (history stores episode ID)
+        const missingEpisodeIds = sList.filter(h => typeof h.episode === 'number').map(h => h.episode as number)
+        if (missingEpisodeIds.length > 0) {
+          try {
+            const episodesData = await api.episodes(`id__in=${missingEpisodeIds.join(',')}`)
+            const episodes = unwrapList(episodesData)
+            sList = sList.map(h => {
+              if (typeof h.episode === 'number') {
+                const detail = episodes.find(e => e.id === h.episode)
+                if (detail) return { ...h, episode: detail }
+              }
+              return h
+            })
+          } catch { /* ignore */ }
+        }
+        
+        if (mRes.status === 'fulfilled') setMovieHistory(mList)
+        if (sRes.status === 'fulfilled') setSeriesHistory(sList)
       } finally {
         if (active) setLoading(false)
       }

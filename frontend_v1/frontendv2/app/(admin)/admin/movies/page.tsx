@@ -77,6 +77,20 @@ export default function AdminMoviesPage() {
     setSelectedGenres([])
   }
 
+  const handlePosterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 20 * 1024 * 1024) {
+        showToast("Rasm hajmi 20 MB dan oshmasligi kerak!")
+        e.target.value = ''
+        return
+      }
+      setPosterFile(file)
+    } else {
+      setPosterFile(null)
+    }
+  }
+
   const openEditModal = (m: MediaItem) => {
     setEditingItem(m)
     setTitle(m.title || '')
@@ -341,7 +355,7 @@ export default function AdminMoviesPage() {
                           accept="image/*"
                           id="poster-upload"
                           className="peer sr-only"
-                          onChange={(e) => setPosterFile(e.target.files?.[0] || null)}
+                          onChange={handlePosterChange}
                         />
                         <label
                           htmlFor="poster-upload"

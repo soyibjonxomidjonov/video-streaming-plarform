@@ -43,6 +43,8 @@ function EpisodesContent() {
   const [telegramChannel, setTelegramChannel] = useState('')
   const [telegramMessageId, setTelegramMessageId] = useState('')
   const [telegramFileId, setTelegramFileId] = useState('')
+  const [posterUrl, setPosterUrl] = useState('')
+  const [posterFile, setPosterFile] = useState<File | null>(null)
 
   const showToast = (msg: string) => {
     setNotice(msg)
@@ -77,6 +79,8 @@ function EpisodesContent() {
     setTelegramChannel('')
     setTelegramMessageId('')
     setTelegramFileId('')
+    setPosterUrl('')
+    setPosterFile(null)
     setShowModal(true)
   }
 
@@ -99,6 +103,8 @@ function EpisodesContent() {
     setTelegramChannel(ep.telegram_channel || '')
     setTelegramMessageId(ep.telegram_message_id ? String(ep.telegram_message_id) : '')
     setTelegramFileId(ep.telegram_file_id || '')
+    setPosterUrl(ep.poster_url || ep.poster || '')
+    setPosterFile(null)
     setFormSeries(String(typeof ep.series === 'object' ? ep.series.id : ep.series))
     setShowModal(true)
   }
@@ -113,21 +119,23 @@ function EpisodesContent() {
       const s = Number(durationSeconds) || 0
       const totalSeconds = (h * 3600) + (m * 60) + s
 
-      const payload: Partial<Episode> = {
-        series: Number(formSeries),
-        episode_number: Number(episodeNumber),
-        title: title.trim(),
-        telegram_channel: telegramChannel.trim(),
-        telegram_message_id: telegramMessageId ? Number(telegramMessageId) : undefined,
-        telegram_file_id: telegramFileId.trim(),
-        duration_seconds: totalSeconds > 0 ? totalSeconds : undefined,
-      }
+      const formData = new FormData()
+      formData.append('series', formSeries)
+      formData.append('episode_number', episodeNumber)
+      if (title.trim()) formData.append('title', title.trim())
+      if (telegramChannel.trim()) formData.append('telegram_channel', telegramChannel.trim())
+      if (telegramMessageId) formData.append('telegram_message_id', telegramMessageId)
+      if (telegramFileId.trim()) formData.append('telegram_file_id', telegramFileId.trim())
+      if (totalSeconds > 0) formData.append('duration_seconds', totalSeconds.toString())
+
+      if (posterFile) formData.append('poster_image', posterFile)
+      else if (posterUrl) formData.append('poster_url', posterUrl)
       
       if (editingItem) {
-        await api.updateEpisode(editingItem.id, payload)
+        await api.updateEpisode(editingItem.id, formData)
         showToast("Epizod muvaffaqiyatli yangilandi ✓")
       } else {
-        await api.createEpisode(payload)
+        await api.createEpisode(formData)
         showToast("Epizod muvaffaqiyatli qo'shildi ✓")
       }
       
@@ -140,11 +148,27 @@ function EpisodesContent() {
       setTelegramChannel('')
       setTelegramMessageId('')
       setTelegramFileId('')
+      setPosterUrl('')
+      setPosterFile(null)
       void loadData(filterSeries)
     } catch {
       showToast("Saqlashda xatolik yuz berdi")
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handlePosterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 20 * 1024 * 1024) {
+        showToast("Rasm hajmi 20 MB dan oshmasligi kerak!")
+        e.target.value = ''
+        return
+      }
+      setPosterFile(file)
+    } else {
+      setPosterFile(null)
     }
   }
 
@@ -180,7 +204,7 @@ function EpisodesContent() {
         </div>
 
         <button
-          onClick={() => { resetForm(); setShowModal(true) }}
+          onClick={openAddModal}
           className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-[#00FFA3] px-6 py-2.5 text-sm font-bold text-[#070A0C] shadow-[0_0_15px_rgba(0,255,163,0.3)] transition hover:bg-[#1AFFA8]"
         >
           <Plus size={18} /> Yangi epizod qo&apos;shish
@@ -346,6 +370,25 @@ function EpisodesContent() {
                   placeholder="Masalan: Chapter One: The Vanishing"
                   className="w-full rounded-2xl border border-[rgba(0,255,163,0.18)] bg-[#0F171A] px-4 py-3 text-sm text-[#F8FAFC] outline-none focus:border-[rgba(0,255,163,0.5)]"
                 />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-bold text-[#64748B]">Poster rasmi (Fayl yoki URL)</label>
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePosterChange}
+                    className="w-full text-xs text-[#64748B] file:mr-2 file:rounded-xl file:border-0 file:bg-[#0B1013] file:px-3 file:py-1.5 file:text-[#00FFA3] hover:file:bg-[#141F24]"
+                  />
+                  <input
+                    type="url"
+                    value={posterUrl}
+                    onChange={(e) => setPosterUrl(e.target.value)}
+                    placeholder="yoki URL kiriting: https://..."
+                    className="w-full rounded-2xl border border-[rgba(0,255,163,0.18)] bg-[#0F171A] px-4 py-3 text-sm text-[#F8FAFC] outline-none focus:border-[rgba(0,255,163,0.5)]"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

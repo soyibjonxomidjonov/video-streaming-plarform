@@ -36,8 +36,44 @@ export default function FavoritesPage() {
           api.favoritesSeries(),
         ])
         if (!active) return
-        if (mRes.status === 'fulfilled') setMovieFavs(unwrapList(mRes.value))
-        if (sRes.status === 'fulfilled') setSeriesFavs(unwrapList(sRes.value))
+        
+        let mList = unwrapList(mRes.value)
+        let sList = unwrapList(sRes.value)
+        
+        // Fetch detailed movie info using id__in filter
+        const missingMovieIds = mList.filter(f => typeof f.movie === 'number').map(f => f.movie as number)
+        if (missingMovieIds.length > 0) {
+          try {
+            const moviesData = await api.movies(`id__in=${missingMovieIds.join(',')}`)
+            const movies = unwrapList(moviesData)
+            mList = mList.map(f => {
+              if (typeof f.movie === 'number') {
+                const detail = movies.find(m => m.id === f.movie)
+                if (detail) return { ...f, movie: detail }
+              }
+              return f
+            })
+          } catch { /* ignore */ }
+        }
+        
+        // Fetch detailed series info using id__in filter
+        const missingSeriesIds = sList.filter(f => typeof f.series === 'number').map(f => f.series as number)
+        if (missingSeriesIds.length > 0) {
+          try {
+            const seriesData = await api.series(`id__in=${missingSeriesIds.join(',')}`)
+            const series = unwrapList(seriesData)
+            sList = sList.map(f => {
+              if (typeof f.series === 'number') {
+                const detail = series.find(s => s.id === f.series)
+                if (detail) return { ...f, series: detail }
+              }
+              return f
+            })
+          } catch { /* ignore */ }
+        }
+        
+        if (mRes.status === 'fulfilled') setMovieFavs(mList)
+        if (sRes.status === 'fulfilled') setSeriesFavs(sList)
       } finally {
         if (active) setLoading(false)
       }

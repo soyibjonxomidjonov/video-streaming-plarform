@@ -75,7 +75,7 @@ export function Header() {
             placeholder="Film, serial yoki semantik qidiruv..."
             aria-label="Film yoki serial qidirish"
             autoComplete="off"
-            className="w-full bg-transparent text-sm text-[#F8FAFC] outline-none placeholder:text-[#4B5563] font-medium border-none shadow-none ring-0 focus:ring-0 focus:shadow-none h-full"
+            className="w-full bg-transparent text-sm text-[#F8FAFC] outline-none focus:outline-none focus-visible:outline-none placeholder:text-[#4B5563] font-medium border-none focus:border-none focus-visible:border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 h-full"
           />
           {query && (
             <button

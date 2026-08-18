@@ -16,21 +16,18 @@ import {
   Star,
   Send,
   AlertCircle,
-  Loader2,
   MessageSquare,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
 import {
   api,
-  mediaTitle,
-  mediaImage,
   type Comment,
   type Episode,
-  type MediaItem,
 } from '@/lib/api'
 import { useAuth } from '@/components/auth-provider'
 import { useVoiceAssistant } from '@/components/voice-assistant-provider'
+import CustomVideoPlayer from '@/components/custom-video-player'
 
 /* ──────────────────────────────────────────────
    Types
@@ -185,17 +182,17 @@ export default function WatchClient({
             setRated(myRating.stars)
             setRatingId(myRating.id)
           }
-        } else if (activeEpisode?.id) {
+        } else if (type === 'series') {
           const [fav, prog, rat] = await Promise.all([
             api.checkFavoriteSeries(id, user?.id),
-            api.checkProgressSeries(activeEpisode.id),
+            activeEpisode?.id ? api.checkProgressSeries(activeEpisode.id) : Promise.resolve(null),
             api.seriesRating(id)
           ])
           if (!active) return
           setFavorite(!!fav)
           setFavoriteId(fav?.id ?? null)
           setProgressId(prog?.id ?? null)
-          const myRating = rat.results.find((r: any) => r.user === user?.id)
+          const myRating = rat?.results?.find((r: any) => r.user === user?.id)
           if (myRating) {
             setRated(myRating.stars)
             setRatingId(myRating.id)
@@ -252,7 +249,8 @@ export default function WatchClient({
       setRetryCount((prev) => prev + 1)
       showToast('Video yuklanmoqda, qayta ulanish...')
       setTimeout(() => {
-        if (videoRef.current) videoRef.current.load()
+        // Retry logic for custom player can be managed by just updating the stream state if needed
+        // but for now, we just show toast.
       }, 1500)
     } else {
       setError("Video oqimini yuklashda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.")
@@ -440,44 +438,26 @@ export default function WatchClient({
       {/* ── Video Stage ── */}
       <div className="w-full min-w-0">
         <div className="relative w-full aspect-video max-h-[75vh] overflow-hidden rounded-2xl border border-[rgba(0,255,163,0.2)] bg-black shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_25px_rgba(0,255,163,0.1)]">
-          <video
-            ref={videoRef}
-            data-role="main-player"
-            preload="metadata"
-            controls
-            playsInline
-            poster={poster}
-            className="size-full object-contain"
-            onWaiting={() => setVideoLoading(true)}
-            onPlaying={() => setVideoLoading(false)}
-            onLoadedData={() => setVideoLoading(false)}
-            onError={handleVideoError}
-          >
-            <source src={currentStream} type="video/mp4" />
-            Brauzeringiz video formatini qo&apos;llab-quvvatlamaydi.
-          </video>
-
-          {/* Loading Spinner */}
-          {videoLoading && !error && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="size-10 rounded-full border-[3px] border-[rgba(0,255,163,0.2)] border-t-[#00FFA3] animate-spin shadow-[0_0_10px_rgba(0,255,163,0.4)]" />
-            </div>
-          )}
-
-          {/* Error */}
-          {error && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/85 p-6">
+          {error ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/85 p-6 z-20">
               <div className="flex max-w-sm flex-col items-center gap-3 rounded-2xl border border-[#EF4444]/30 bg-[#0F171A] p-6 text-center shadow-2xl">
                 <AlertCircle size={32} className="text-[#EF4444]" />
                 <p className="text-sm font-medium text-[#F8FAFC]">{error}</p>
                 <button
-                  onClick={() => { setError(null); setVideoLoading(true); if (videoRef.current) videoRef.current.load() }}
+                  onClick={() => { setError(null); setVideoLoading(true); setRetryCount(0); }}
                   className="rounded-xl bg-[#00FFA3] px-5 py-2 text-xs font-bold text-[#070A0C] transition hover:bg-[#1AFFA8] min-h-[44px]"
                 >
                   Qayta urinish
                 </button>
               </div>
             </div>
+          ) : (
+            <CustomVideoPlayer
+              src={currentStream}
+              poster={poster}
+              autoPlay
+              onError={handleVideoError}
+            />
           )}
         </div>
       </div>

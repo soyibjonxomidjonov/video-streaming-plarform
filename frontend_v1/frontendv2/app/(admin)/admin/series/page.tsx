@@ -3,7 +3,7 @@
 import React, { useEffect, useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { Plus, Trash2, Edit3, Tv, Search, X, Loader2 } from 'lucide-react'
-import { api, mediaTitle, unwrapList, type MediaItem } from '@/lib/api'
+import { api, mediaTitle, unwrapList, type MediaItem, type Genre } from '@/lib/api'
 
 export default function AdminSeriesPage() {
   const [series, setSeries] = useState<MediaItem[]>([])
@@ -19,9 +19,7 @@ export default function AdminSeriesPage() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [posterUrl, setPosterUrl] = useState('')
-  const [backdropUrl, setBackdropUrl] = useState('')
   const [posterFile, setPosterFile] = useState<File | null>(null)
-  const [backdropFile, setBackdropFile] = useState<File | null>(null)
   const [selectedGenres, setSelectedGenres] = useState<number[]>([])
 
   const showToast = (msg: string) => {
@@ -49,9 +47,7 @@ export default function AdminSeriesPage() {
     setTitle('')
     setDescription('')
     setPosterUrl('')
-    setBackdropUrl('')
     setPosterFile(null)
-    setBackdropFile(null)
     setSelectedGenres([])
     setShowModal(true)
   }
@@ -60,10 +56,8 @@ export default function AdminSeriesPage() {
     setEditingItem(item)
     setTitle(item.title || '')
     setDescription(item.description || '')
-    setPosterUrl(item.poster_url || item.poster || '')
-    setBackdropUrl(item.backdrop_url || item.backdrop || '')
+    setPosterUrl(item.poster_image || item.poster_url || item.poster || item.image || '')
     setPosterFile(null)
-    setBackdropFile(null)
     if (item.genres) {
       setSelectedGenres(item.genres.map((g: any) => typeof g === 'object' ? g.id : g))
     } else {
@@ -72,52 +66,62 @@ export default function AdminSeriesPage() {
     setShowModal(true)
   }
 
+  const resetForm = () => {
+    setEditingItem(null)
+    setTitle('')
+    setDescription('')
+    setPosterUrl('')
+    setBackdropUrl('')
+    setPosterFile(null)
+    setBackdropFile(null)
+    setSelectedGenres([])
+  }
+
   const handleSave = async (e: FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
     setSaving(true)
     try {
-      let payload: Partial<MediaItem> | FormData
+      const formData = new FormData()
+      formData.append('title', title.trim())
+      if (description.trim()) formData.append('description', description.trim())
+      if (posterFile) formData.append('poster_image', posterFile)
+      else if (posterUrl) formData.append('poster_url', posterUrl)
 
-      if (posterFile || backdropFile || true) {
-        const formData = new FormData()
-        formData.append('title', title.trim())
-        if (description.trim()) formData.append('description', description.trim())
-        if (posterFile) formData.append('poster_image', posterFile)
-        else if (posterUrl) formData.append('poster_url', posterUrl)
-
-        if (backdropFile) formData.append('backdrop_image', backdropFile)
-        else if (backdropUrl) formData.append('backdrop_url', backdropUrl)
-
-        selectedGenres.forEach(gId => formData.append('genres', gId.toString()))
-
-        if (editingItem) {
-          payload = formData
-        } else {
-          payload = formData
-        }
-      } else {
-        payload = {
-          title: title.trim(),
-          description: description.trim(),
-          poster_url: posterUrl.trim(),
-          backdrop_url: backdropUrl.trim(),
-        }
-      }
+      selectedGenres.forEach(gId => formData.append('genres', gId.toString()))
 
       if (editingItem?.id) {
-        await api.updateSeries(editingItem.id, payload)
+        await api.updateSeries(editingItem.id, formData)
         showToast("Serial muvaffaqiyatli tahrirlandi ✓")
       } else {
-        await api.createSeries(payload)
+        await api.createSeries(formData)
         showToast("Yangi serial qo'shildi ✓")
       }
       setShowModal(false)
+      setTitle('')
+      setDescription('')
+      setPosterUrl('')
+      setPosterFile(null)
+      setSelectedGenres([])
       void loadData()
     } catch {
       showToast("Saqlashda xatolik yuz berdi")
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handlePosterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 20 * 1024 * 1024) {
+        showToast("Poster rasmi hajmi 20 MB dan oshmasligi kerak!")
+        e.target.value = ''
+        return
+      }
+      setPosterFile(file)
+    } else {
+      setPosterFile(null)
     }
   }
 
@@ -163,7 +167,6 @@ export default function AdminSeriesPage() {
         </div>
       )}
 
-      {/* Table */}
       <div className="overflow-hidden rounded-3xl border border-[rgba(0,255,163,0.15)] bg-[#0F171A] shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -231,123 +234,135 @@ export default function AdminSeriesPage() {
         </div>
       </div>
 
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-          <div className="relative w-full max-w-lg rounded-3xl border border-[rgba(0,255,163,0.3)] bg-[#0F171A] p-6 sm:p-8 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[rgba(0,255,163,0.1)] pb-4 mb-5">
-              <h2 className="font-display text-lg font-bold text-[#F8FAFC]">
+          <div className="relative w-full max-w-4xl rounded-3xl border border-[rgba(0,255,163,0.3)] bg-[#0F171A] p-6 shadow-xl animate-in fade-in duration-300 sm:p-8">
+            <div className="flex items-center justify-between border-b border-[rgba(0,255,163,0.1)] pb-4 mb-6">
+              <h2 className="font-display text-xl font-bold text-[#F8FAFC]">
                 {editingItem ? 'Serialni tahrirlash' : 'Yangi serial qo\'shish'}
               </h2>
-              <button onClick={() => setShowModal(false)} className="text-[#64748B] hover:text-[#F8FAFC]">
+              <button onClick={() => setShowModal(false)} className="rounded-full p-2 text-[#64748B] transition hover:bg-[rgba(0,255,163,0.1)] hover:text-[#ff4d6d]">
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="flex flex-col gap-4">
-              <div>
-                <label className="mb-1 block text-xs font-bold text-[#F8FAFC]">Serial nomi</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                  placeholder="Masalan: Stranger Things"
-                  className="w-full rounded-xl border border-[rgba(0,255,163,0.2)] bg-[#0B1013] px-3.5 py-2.5 text-xs text-[#F8FAFC] outline-none focus:border-[#00FFA3]"
-                />
-              </div>
+            <form onSubmit={handleSave} className="flex flex-col gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left Column */}
+                <div className="flex flex-col gap-5">
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-[#64748B]">Serial nomi</label>
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      required
+                      placeholder="Masalan: Stranger Things"
+                      className="w-full rounded-2xl border border-[rgba(0,255,163,0.18)] bg-[#0F171A] px-4 py-3 text-sm text-[#F8FAFC] outline-none transition focus:border-[rgba(0,255,163,0.5)]"
+                    />
+                  </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-bold text-[#64748B]">Tavsif</label>
-                <textarea
-                  rows={6}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Serial haqida to'liq ma'lumot..."
-                  className="w-full rounded-2xl border border-[rgba(0,255,163,0.18)] bg-[#0F171A] px-4 py-3 text-sm text-[#F8FAFC] outline-none transition focus:border-[rgba(0,255,163,0.5)]"
-                />
-              </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-[#64748B]">Tavsif</label>
+                    <textarea
+                      rows={6}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Serial haqida to'liq ma'lumot..."
+                      className="w-full rounded-2xl border border-[rgba(0,255,163,0.18)] bg-[#0F171A] px-4 py-3 text-sm text-[#F8FAFC] outline-none transition focus:border-[rgba(0,255,163,0.5)]"
+                    />
+                  </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-bold text-[#64748B]">Janrlar</label>
-                <div className="flex flex-wrap gap-2 rounded-2xl border border-[rgba(0,255,163,0.18)] bg-[#0F171A] p-4">
-                  {genres.length === 0 ? (
-                    <span className="text-xs text-[#64748B]">Janrlar topilmadi. Avval janr qo'shing.</span>
-                  ) : (
-                    genres.map((g) => {
-                      const isSelected = selectedGenres.includes(g.id)
-                      return (
-                        <button
-                          type="button"
-                          key={g.id}
-                          onClick={() => {
-                            setSelectedGenres(prev => 
-                              isSelected ? prev.filter(id => id !== g.id) : [...prev, g.id]
-                            )
-                          }}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                            isSelected 
-                              ? 'bg-[#00FFA3] text-[#070A0C]' 
-                              : 'bg-[#0B1013] text-[#64748B] hover:bg-[#141F24]'
-                          }`}
-                        >
-                          {g.name}
-                        </button>
-                      )
-                    })
-                  )}
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-[#64748B]">Janrlar</label>
+                    <div className="flex flex-wrap gap-2 rounded-2xl border border-[rgba(0,255,163,0.18)] bg-[#0F171A] p-4">
+                      {genres.length === 0 ? (
+                        <span className="text-xs text-[#64748B]">Janrlar topilmadi. Avval janr qo'shing.</span>
+                      ) : (
+                        genres.map((g) => {
+                          const isSelected = selectedGenres.includes(g.id)
+                          return (
+                            <button
+                              type="button"
+                              key={g.id}
+                              onClick={() => {
+                                setSelectedGenres(prev => 
+                                  isSelected ? prev.filter(id => id !== g.id) : [...prev, g.id]
+                                )
+                              }}
+                              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                                isSelected 
+                                  ? 'bg-[#00FFA3] text-[#070A0C]' 
+                                  : 'bg-[#0B1013] text-[#64748B] hover:bg-[#141F24]'
+                              }`}
+                            >
+                              {g.name}
+                            </button>
+                          )
+                        })
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column */}
+                <div className="flex flex-col gap-5">
+                  <div className="flex flex-col gap-3 rounded-2xl border border-[rgba(0,255,163,0.1)] bg-[#0B1013]/50 p-5">
+                    <label className="text-sm font-bold text-[#00FFA3]" title="Asosiy vertikal rasm (kino muqovasi)">Poster (Asosiy rasm)</label>
+                    <div className="flex gap-4">
+                      <div className="flex flex-1 flex-col gap-3">
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="poster-upload"
+                            className="peer sr-only"
+                            onChange={handlePosterChange}
+                          />
+                          <label
+                            htmlFor="poster-upload"
+                            className="flex cursor-pointer items-center justify-between rounded-xl border border-[rgba(0,255,163,0.3)] bg-[#0F171A] px-4 py-3 text-sm text-[#F8FAFC] transition hover:border-[#00FFA3]"
+                          >
+                            <span className="truncate max-w-[150px] text-[#64748B]">{posterFile ? posterFile.name : "Kompyuterdan tanlash"}</span>
+                            <span className="ml-2 shrink-0 rounded-lg bg-[rgba(0,255,163,0.15)] px-4 py-1.5 text-xs font-bold text-[#00FFA3]">Fayl yuklash</span>
+                          </label>
+                        </div>
+                        <input
+                          type="url"
+                          value={posterUrl}
+                          onChange={(e) => setPosterUrl(e.target.value)}
+                          placeholder="yoki internetdan URL link..."
+                          className="w-full rounded-xl border border-[rgba(0,255,163,0.2)] bg-[#0F171A] px-4 py-3 text-sm text-[#F8FAFC] outline-none transition focus:border-[rgba(0,255,163,0.5)]"
+                        />
+                      </div>
+                      <div className="flex h-[104px] w-[104px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[rgba(0,255,163,0.2)] bg-[#0F171A]">
+                        {posterFile ? (
+                          <img src={URL.createObjectURL(posterFile)} alt="Preview" className="h-full w-full object-cover" />
+                        ) : posterUrl ? (
+                          <img src={posterUrl} alt="Preview" className="h-full w-full object-cover" onError={(e) => (e.currentTarget.src = '')} />
+                        ) : (
+                          <Tv className="text-[#00FFA3]/20" size={32} />
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-[#F8FAFC]">Poster (Fayl yoki URL)</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setPosterFile(e.target.files?.[0] || null)}
-                    className="w-full text-xs text-[#64748B] file:mr-2 file:rounded-xl file:border-0 file:bg-[#0B1013] file:px-3 file:py-1.5 file:text-[#00FFA3] hover:file:bg-[#141F24]"
-                  />
-                  <input
-                    type="url"
-                    value={posterUrl}
-                    onChange={(e) => setPosterUrl(e.target.value)}
-                    placeholder="yoki URL: https://..."
-                    className="w-full rounded-xl border border-[rgba(0,255,163,0.2)] bg-[#0B1013] px-3.5 py-2.5 text-xs text-[#F8FAFC] outline-none focus:border-[#00FFA3]"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-[#F8FAFC]">Backdrop (Fayl yoki URL)</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setBackdropFile(e.target.files?.[0] || null)}
-                    className="w-full text-xs text-[#64748B] file:mr-2 file:rounded-xl file:border-0 file:bg-[#0B1013] file:px-3 file:py-1.5 file:text-[#00FFA3] hover:file:bg-[#141F24]"
-                  />
-                  <input
-                    type="url"
-                    value={backdropUrl}
-                    onChange={(e) => setBackdropUrl(e.target.value)}
-                    placeholder="yoki URL: https://..."
-                    className="w-full rounded-xl border border-[rgba(0,255,163,0.2)] bg-[#0B1013] px-3.5 py-2.5 text-xs text-[#F8FAFC] outline-none focus:border-[#00FFA3]"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-4 flex justify-end gap-3">
+              <div className="mt-6 flex justify-end gap-3 border-t border-[rgba(0,255,163,0.1)] pt-6">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="rounded-xl border border-[rgba(0,255,163,0.2)] bg-[#0B1013] px-5 py-2.5 text-xs font-bold text-[#F8FAFC]"
+                  className="rounded-xl border border-[rgba(0,255,163,0.2)] bg-[#0B1013] px-6 py-3 text-sm font-bold text-[#F8FAFC] transition hover:bg-[#141F24]"
                 >
                   Bekor qilish
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex items-center gap-2 rounded-xl bg-[#00FFA3] px-6 py-2.5 text-xs font-bold text-[#070A0C] shadow-[0_0_15px_rgba(0,255,163,0.4)] hover:bg-[#1AFFA8]"
+                  className="flex items-center gap-2 rounded-xl bg-[#00FFA3] px-8 py-3 text-sm font-bold text-[#070A0C] shadow-[0_0_15px_rgba(0,255,163,0.4)] transition hover:bg-[#1AFFA8]"
                 >
-                  {saving ? <Loader2 size={15} className="animate-spin" /> : 'Saqlash'}
+                  {saving ? <Loader2 size={18} className="animate-spin" /> : 'Saqlash'}
                 </button>
               </div>
             </form>
