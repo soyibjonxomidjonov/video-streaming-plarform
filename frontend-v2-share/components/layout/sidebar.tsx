@@ -104,22 +104,8 @@ export function Sidebar() {
           </button>
         </nav>
 
-        {/* Bottom: Admin, Settings, Profile */}
+        {/* Bottom: Settings, Profile */}
         <div className="flex flex-col items-center gap-2.5">
-          {isAdmin && (
-            <Link
-              href="/admin"
-              prefetch={true}
-              className={`group flex size-12 items-center justify-center rounded-2xl transition ${
-                pathname.startsWith('/admin')
-                  ? 'bg-[rgba(0,255,163,0.15)] text-[#00FFA3]'
-                  : 'text-[#64748B] hover:bg-[#141F24] hover:text-[#00FFA3]'
-              }`}
-              title="Admin Panel"
-            >
-              <ShieldAlert size={20} />
-            </Link>
-          )}
 
           <Link
             href="/settings"

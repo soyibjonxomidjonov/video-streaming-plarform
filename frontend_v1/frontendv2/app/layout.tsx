@@ -45,7 +45,7 @@ export const viewport: Viewport = {
  */
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="uz" className="bg-[#070A0C]">
+    <html lang="uz" className="bg-[#070A0C]" data-scroll-behavior="smooth">
       <body className="bg-[#070A0C] text-[#F8FAFC] antialiased">
         <GoogleAuthProvider>
           <AuthProvider>

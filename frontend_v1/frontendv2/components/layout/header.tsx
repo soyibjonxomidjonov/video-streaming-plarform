@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Search, X, ShieldAlert } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
 import { Logo } from '@/components/ui/logo'
-import { API_BASE, getImageUrl } from '@/lib/api'
+import { API_BASE, getImageUrl, getCachedAvatar } from '@/lib/api'
 
 export function Header() {
   const router = useRouter()
@@ -54,7 +54,7 @@ export function Header() {
         aria-label="Kontent qidirish"
       >
         <div
-          className={`h-11 sm:h-12 w-full max-w-xl rounded-2xl bg-[#0F171A] border px-4 flex items-center gap-3 transition-all duration-200 ${
+          className={`h-11 sm:h-12 w-full max-w-xl rounded-2xl bg-[#0F171A] border px-3 sm:px-4 flex items-center gap-2 sm:gap-3 transition-all duration-200 ${
             searchFocused
               ? 'border-[#00FFA3] shadow-[0_0_16px_rgba(0,255,163,0.18)] ring-1 ring-[#00FFA3]/25'
               : 'border-[rgba(0,255,163,0.15)] hover:border-[rgba(0,255,163,0.35)]'
@@ -97,10 +97,11 @@ export function Header() {
             href="/admin"
             prefetch={true}
             aria-label="Admin panelga o'tish"
-            className="hidden md:flex items-center gap-2 rounded-xl border border-[rgba(0,255,163,0.25)] bg-[rgba(0,255,163,0.08)] px-4 py-2 text-sm font-bold text-[#00FFA3] transition hover:bg-[rgba(0,255,163,0.18)] hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-[#00FFA3]"
+            title="Admin Panel"
+            className="flex items-center gap-2 rounded-xl border border-[rgba(0,255,163,0.25)] bg-[rgba(0,255,163,0.08)] px-2.5 py-2 md:px-4 md:py-2 text-sm font-bold text-[#00FFA3] transition hover:bg-[rgba(0,255,163,0.18)] hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-[#00FFA3]"
           >
             <ShieldAlert size={16} aria-hidden="true" />
-            Admin
+            <span className="hidden md:inline">Admin</span>
           </Link>
         )}
 
@@ -126,6 +127,10 @@ export function Header() {
                 src={getImageUrl(user.picture)} 
                 alt="Profil" 
                 className="size-full object-cover" 
+                onError={(e) => {
+                  const saved = getCachedAvatar(user?.email)
+                  if (saved && e.currentTarget.src !== saved) e.currentTarget.src = saved
+                }}
               />
             ) : (
               userInitials

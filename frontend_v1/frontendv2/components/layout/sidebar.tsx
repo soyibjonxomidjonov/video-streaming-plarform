@@ -11,7 +11,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
 import { Logo } from '@/components/ui/logo'
-import { API_BASE, getImageUrl } from '@/lib/api'
+import { API_BASE, getImageUrl, getCachedAvatar } from '@/lib/api'
 
 type NavItem = {
   icon: LucideIcon
@@ -118,24 +118,8 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Bottom: Admin, Settings, Profile */}
+        {/* Bottom: Settings, Profile */}
         <div className="flex flex-col items-center gap-2">
-          {isAdmin && (
-            <Link
-              href="/admin"
-              prefetch={true}
-              aria-label="Admin panelga o'tish"
-              aria-current={pathname.startsWith('/admin') ? 'page' : undefined}
-              title="Admin Panel"
-              className={`group flex size-11 items-center justify-center rounded-2xl transition focus-visible:outline-2 focus-visible:outline-[#00FFA3] focus-visible:outline-offset-2 ${
-                pathname.startsWith('/admin')
-                  ? 'bg-[rgba(0,255,163,0.14)] text-[#00FFA3]'
-                  : 'text-[#4B5563] hover:bg-[#141F24] hover:text-[#00FFA3]'
-              }`}
-            >
-              <ShieldAlert size={19} aria-hidden="true" />
-            </Link>
-          )}
 
           <Link
             href="/settings"
@@ -166,6 +150,10 @@ export function Sidebar() {
                   src={getImageUrl(user.picture)} 
                   alt="Profil" 
                   className="size-full object-cover" 
+                  onError={(e) => {
+                    const saved = getCachedAvatar(user?.email)
+                    if (saved && e.currentTarget.src !== saved) e.currentTarget.src = saved
+                  }}
                 />
               ) : (
                 userInitials

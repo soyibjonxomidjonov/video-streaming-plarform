@@ -36,7 +36,7 @@ export function Header() {
       {/* Search Bar */}
       <form onSubmit={handleSearch} className="flex-1 w-full flex justify-center lg:justify-start">
         <div
-          className={`h-12 sm:h-14 max-w-2xl w-full mx-6 rounded-2xl bg-[#0F171A] border px-5 text-base flex items-center gap-3 transition-all duration-200 ${
+          className={`h-12 sm:h-14 max-w-2xl w-full mx-2 sm:mx-4 md:mx-6 rounded-2xl bg-[#0F171A] border px-4 sm:px-5 text-base flex items-center gap-2 sm:gap-3 transition-all duration-200 ${
             searchFocused
               ? 'border-[#00FFA3] shadow-[0_0_16px_rgba(0,255,163,0.2)] ring-1 ring-[#00FFA3]/30'
               : 'border-[#00FFA3]/20 hover:border-[#00FFA3]/40'
@@ -80,9 +80,10 @@ export function Header() {
           <Link
             href="/admin"
             prefetch={true}
-            className="hidden md:flex items-center gap-2 rounded-xl border border-[rgba(0,255,163,0.25)] bg-[rgba(0,255,163,0.08)] px-4 py-2.5 text-sm font-bold text-[#00FFA3] transition hover:bg-[rgba(0,255,163,0.18)]"
+            className="flex items-center gap-2 rounded-xl border border-[rgba(0,255,163,0.25)] bg-[rgba(0,255,163,0.08)] px-2.5 py-2.5 md:px-4 text-sm font-bold text-[#00FFA3] transition hover:bg-[rgba(0,255,163,0.18)]"
+            title="Admin Panel"
           >
-            <ShieldAlert size={18} /> Admin
+            <ShieldAlert size={18} /> <span className="hidden md:inline">Admin</span>
           </Link>
         )}
 

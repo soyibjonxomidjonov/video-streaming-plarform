@@ -7,7 +7,7 @@ import {
   LogOut, Pencil, Check, User, Loader2,
   LayoutDashboard, Bookmark, Clock, ShieldAlert, Sparkles, Upload,
 } from 'lucide-react'
-import { api, getImageUrl, unwrapList, type MediaItem } from '@/lib/api'
+import { api, getImageUrl, unwrapList, type MediaItem, getCachedAvatar, setCachedAvatar } from '@/lib/api'
 import { useAuth } from '@/components/auth-provider'
 import MediaCard from '@/components/media-card'
 
@@ -117,11 +117,11 @@ export default function ProfileClient() {
       
       const saveAndDispatch = (base64Str: string) => {
         setProfileAvatar(base64Str)
+        setCachedAvatar(user?.email, base64Str)
         try {
-          localStorage.setItem('streamora_profile_avatar', base64Str)
           window.dispatchEvent(new Event('profile_updated'))
         } catch (err) {
-          console.error("Rasm hajmi juda katta, saqlab bo'lmadi")
+          console.error("Rasm xatoligi", err)
         }
       }
 
@@ -197,6 +197,10 @@ export default function ProfileClient() {
                 src={getImageUrl(profileAvatar)} 
                 alt="Avatar" 
                 className="size-full object-cover" 
+                onError={(e) => {
+                  const saved = getCachedAvatar(user?.email)
+                  if (saved && e.currentTarget.src !== saved) e.currentTarget.src = saved
+                }}
               />
             ) : (
               <div className="flex size-full items-center justify-center bg-gradient-to-br from-[#0D4D38] to-[#00FFA3]">

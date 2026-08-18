@@ -19,10 +19,9 @@ export default function AdminMoviesPage() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [posterUrl, setPosterUrl] = useState('')
-  const [backdropUrl, setBackdropUrl] = useState('')
   const [posterFile, setPosterFile] = useState<File | null>(null)
-  const [backdropFile, setBackdropFile] = useState<File | null>(null)
   const [telegramChannel, setTelegramChannel] = useState('')
+  const [telegramMessageId, setTelegramMessageId] = useState('')
   const [telegramFileId, setTelegramFileId] = useState('')
   const [durationSeconds, setDurationSeconds] = useState('')
 
@@ -51,10 +50,9 @@ export default function AdminMoviesPage() {
     setTitle('')
     setDescription('')
     setPosterUrl('')
-    setBackdropUrl('')
     setPosterFile(null)
-    setBackdropFile(null)
     setTelegramChannel('')
+    setTelegramMessageId('')
     setTelegramFileId('')
     setDurationSeconds('')
     setShowModal(true)
@@ -64,12 +62,11 @@ export default function AdminMoviesPage() {
     setEditingItem(item)
     setTitle(item.title || '')
     setDescription(item.description || '')
-    setPosterUrl(item.poster_url || item.poster || '')
-    setBackdropUrl(item.backdrop_url || item.backdrop || '')
+    setPosterUrl(item.poster || item.poster_url || '')
     setPosterFile(null)
-    setBackdropFile(null)
     setTelegramChannel(item.telegram_channel || '')
-    setTelegramFileId((item as any).telegram_file_id || '')
+    setTelegramMessageId(item.telegram_message_id ? String(item.telegram_message_id) : '')
+    setTelegramFileId(item.telegram_file_id || '')
     setDurationSeconds(item.duration_seconds ? String(item.duration_seconds) : '')
     setShowModal(true)
   }
@@ -81,24 +78,24 @@ export default function AdminMoviesPage() {
     try {
       let payload: Partial<MediaItem> | FormData
 
-      if (posterFile || backdropFile) {
+      if (posterFile) {
         const formData = new FormData()
         formData.append('title', title.trim())
         if (description.trim()) formData.append('description', description.trim())
         if (telegramChannel.trim()) formData.append('telegram_channel', telegramChannel.trim())
+        if (telegramMessageId.trim()) formData.append('telegram_message_id', telegramMessageId.trim())
+        if (telegramFileId.trim()) formData.append('telegram_file_id', telegramFileId.trim())
         if (durationSeconds) formData.append('duration_seconds', durationSeconds)
-        if (posterFile) formData.append('poster', posterFile)
-        else if (posterUrl.trim()) formData.append('poster_url', posterUrl.trim())
-        if (backdropFile) formData.append('backdrop', backdropFile)
-        else if (backdropUrl.trim()) formData.append('backdrop_url', backdropUrl.trim())
+        formData.append('poster', posterFile)
         payload = formData
       } else {
         payload = {
           title: title.trim(),
           description: description.trim(),
-          poster_url: posterUrl.trim(),
-          backdrop_url: backdropUrl.trim(),
+          ...(posterUrl.trim() ? { poster_url: posterUrl.trim() } : {}),
           telegram_channel: telegramChannel.trim(),
+          telegram_message_id: telegramMessageId ? Number(telegramMessageId) : undefined,
+          telegram_file_id: telegramFileId.trim(),
           ...(durationSeconds ? { duration_seconds: Number(durationSeconds) } : {}),
         }
       }
@@ -229,7 +226,7 @@ export default function AdminMoviesPage() {
       {/* Add / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-          <div className="relative w-full max-w-lg rounded-3xl border border-[rgba(0,255,163,0.3)] bg-[#0F171A] p-6 sm:p-8 shadow-2xl">
+          <div className="relative w-full max-w-2xl rounded-3xl border border-[rgba(0,255,163,0.3)] bg-[#0F171A] p-6 sm:p-8 shadow-2xl">
             <div className="flex items-center justify-between border-b border-[rgba(0,255,163,0.1)] pb-4 mb-5">
               <h2 className="font-display text-lg font-bold text-[#F8FAFC]">
                 {editingItem ? 'Filmni tahrirlash' : 'Yangi film qo\'shish'}
@@ -263,15 +260,25 @@ export default function AdminMoviesPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-[#F8FAFC]">Poster (Fayl yoki URL)</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setPosterFile(e.target.files?.[0] || null)}
-                    className="w-full text-xs text-[#64748B] file:mr-2 file:rounded-xl file:border-0 file:bg-[#0B1013] file:px-3 file:py-1.5 file:text-[#00FFA3] hover:file:bg-[#141F24]"
-                  />
+                  <label className="text-xs font-bold text-[#F8FAFC]" title="Asosiy vertikal rasm (kino muqovasi)">Poster (Fayl yoki URL)</label>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="poster-upload"
+                      className="peer sr-only"
+                      onChange={(e) => setPosterFile(e.target.files?.[0] || null)}
+                    />
+                    <label
+                      htmlFor="poster-upload"
+                      className="flex cursor-pointer items-center justify-between rounded-xl border border-[rgba(0,255,163,0.2)] bg-[#0B1013] px-3.5 py-2.5 text-xs text-[#F8FAFC] transition hover:border-[#00FFA3]"
+                    >
+                      <span className="truncate max-w-[120px] text-[#64748B]">{posterFile ? posterFile.name : "Fayl tanlanmagan"}</span>
+                      <span className="ml-2 shrink-0 rounded-lg bg-[rgba(0,255,163,0.1)] px-3 py-1 font-bold text-[#00FFA3]">Tanlash</span>
+                    </label>
+                  </div>
                   <input
                     type="url"
                     value={posterUrl}
@@ -281,18 +288,21 @@ export default function AdminMoviesPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-[#F8FAFC]">Backdrop (Fayl yoki URL)</label>
+                  <label className="mb-1 block text-xs font-bold text-[#F8FAFC]">Telegram Kanal</label>
                   <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setBackdropFile(e.target.files?.[0] || null)}
-                    className="w-full text-xs text-[#64748B] file:mr-2 file:rounded-xl file:border-0 file:bg-[#0B1013] file:px-3 file:py-1.5 file:text-[#00FFA3] hover:file:bg-[#141F24]"
+                    type="text"
+                    value={telegramChannel}
+                    onChange={(e) => setTelegramChannel(e.target.value)}
+                    placeholder="@mychannel"
+                    className="w-full rounded-xl border border-[rgba(0,255,163,0.2)] bg-[#0B1013] px-3.5 py-2.5 text-xs text-[#F8FAFC] outline-none focus:border-[#00FFA3]"
                   />
+                  
+                  <label className="mb-1 mt-1 block text-xs font-bold text-[#F8FAFC]">Telegram File ID</label>
                   <input
-                    type="url"
-                    value={backdropUrl}
-                    onChange={(e) => setBackdropUrl(e.target.value)}
-                    placeholder="yoki URL: https://..."
+                    type="text"
+                    value={telegramFileId}
+                    onChange={(e) => setTelegramFileId(e.target.value)}
+                    placeholder="BQACAgIAAxkBAA..."
                     className="w-full rounded-xl border border-[rgba(0,255,163,0.2)] bg-[#0B1013] px-3.5 py-2.5 text-xs text-[#F8FAFC] outline-none focus:border-[#00FFA3]"
                   />
                 </div>
@@ -300,12 +310,13 @@ export default function AdminMoviesPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-[#F8FAFC]">Telegram Kanal</label>
+                  <label className="mb-1 block text-xs font-bold text-[#F8FAFC]">Telegram Message ID</label>
                   <input
-                    type="text"
-                    value={telegramChannel}
-                    onChange={(e) => setTelegramChannel(e.target.value)}
-                    placeholder="@mychannel"
+                    type="number"
+                    value={telegramMessageId}
+                    onChange={(e) => setTelegramMessageId(e.target.value)}
+                    required
+                    placeholder="12345"
                     className="w-full rounded-xl border border-[rgba(0,255,163,0.2)] bg-[#0B1013] px-3.5 py-2.5 text-xs text-[#F8FAFC] outline-none focus:border-[#00FFA3]"
                   />
                 </div>

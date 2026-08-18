@@ -11,7 +11,7 @@ class Movie(models.Model):
 
     telegram_channel = models.CharField(max_length=250)
     telegram_message_id = models.BigIntegerField()
-    telegram_file_id = models.CharField(max_length=250)
+    telegram_file_id = models.CharField(max_length=250, null=True, blank=True)
 
     genres = models.ManyToManyField(Genre, related_name="movies")
     duration_seconds = models.PositiveIntegerField()

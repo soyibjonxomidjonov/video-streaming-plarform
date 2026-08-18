@@ -30,7 +30,7 @@ class Episode(models.Model):
 
     telegram_channel = models.CharField(max_length=250)
     telegram_message_id = models.BigIntegerField()
-    telegram_file_id = models.CharField(max_length=250)
+    telegram_file_id = models.CharField(max_length=250, null=True, blank=True)
 
     duration_seconds = models.PositiveIntegerField()
 
