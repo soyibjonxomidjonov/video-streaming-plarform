@@ -226,17 +226,19 @@ button, a {
 }
 
 /* ── Inputs ── */
-input, textarea, select {
-  background: transparent;
-  border: none;
-  color: #F8FAFC;
-  border-radius: 0;
-  font-family: inherit;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  box-shadow: none;
+@layer base {
+  input, textarea, select {
+    background: transparent;
+    border: none;
+    color: #F8FAFC;
+    border-radius: 0;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    box-shadow: none;
+  }
 }
 
 option {

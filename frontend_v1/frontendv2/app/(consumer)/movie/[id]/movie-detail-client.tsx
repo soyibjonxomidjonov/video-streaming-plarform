@@ -1,6 +1,6 @@
 'use client'
 
-import React, { type FormEvent, useState } from 'react'
+import React, { type FormEvent, useState, useEffect } from 'react'
 import { Bookmark, MessageSquare, Send, Star, AlertCircle } from 'lucide-react'
 import { api, type Comment } from '@/lib/api'
 import { useAuth } from '@/components/auth-provider'
@@ -16,11 +16,41 @@ type Props = {
 export default function MovieDetailClient({ id, type, title, initialComments }: Props) {
   const { isAuthenticated, user } = useAuth()
   const [favorite, setFavorite] = useState(false)
+  const [favoriteId, setFavoriteId] = useState<number | null>(null)
   const [rated, setRated] = useState(0)
+  const [ratingId, setRatingId] = useState<number | null>(null)
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [comment, setComment] = useState('')
   const [notice, setNotice] = useState<string | null>(null)
   const [hoverRating, setHoverRating] = useState(0)
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (type === 'movie') {
+        api.checkFavoriteMovie(id, user.id).then(res => {
+          if (res) { setFavorite(true); setFavoriteId(res.id) }
+        }).catch(() => {})
+        api.movieRating(id).then(res => {
+          const myRating = res.results.find((r: any) => r.user === user.id)
+          if (myRating) {
+            setRated(myRating.stars)
+            setRatingId(myRating.id)
+          }
+        }).catch(() => {})
+      } else {
+        api.checkFavoriteSeries(id, user.id).then(res => {
+          if (res) { setFavorite(true); setFavoriteId(res.id) }
+        }).catch(() => {})
+        api.seriesRating(id).then(res => {
+          const myRating = res.results.find((r: any) => r.user === user.id)
+          if (myRating) {
+            setRated(myRating.stars)
+            setRatingId(myRating.id)
+          }
+        }).catch(() => {})
+      }
+    }
+  }, [isAuthenticated, user, id, type])
 
   const showNotice = (msg: string) => {
     setNotice(msg)
@@ -32,20 +62,30 @@ export default function MovieDetailClient({ id, type, title, initialComments }: 
       showNotice("Iltimos, avval tizimga kiring")
       return
     }
+    const prev = favorite
+    setFavorite(!prev)
     try {
-      if (favorite) {
-        if (type === 'movie') await api.removeFavoriteMovie(id)
-        else await api.removeFavoriteSeries(id)
-        setFavorite(false)
-        showNotice("Sevimlilardan olib tashlandi")
-      } else {
-        if (type === 'movie') await api.addFavoriteMovie(id)
-        else await api.addFavoriteSeries(id)
-        setFavorite(true)
+      if (!prev) {
+        let res;
+        if (type === 'movie') res = await api.addFavoriteMovie(id)
+        else res = await api.addFavoriteSeries(id)
+        if (res && res.id) setFavoriteId(res.id)
         showNotice("Sevimlilarga qo'shildi ⭐")
+      } else {
+        if (favoriteId) {
+          if (type === 'movie') await api.removeFavoriteMovie(favoriteId)
+          else await api.removeFavoriteSeries(favoriteId)
+        } else {
+          // fallback
+          if (type === 'movie') await api.removeFavoriteMovie(id)
+          else await api.removeFavoriteSeries(id)
+        }
+        showNotice("Sevimlilardan olib tashlandi")
+        setFavoriteId(null)
       }
     } catch {
-      showNotice("Sevimlilarni saqlashda xatolik")
+      setFavorite(prev)
+      showNotice("Xatolik yuz berdi")
     }
   }
 
@@ -54,12 +94,21 @@ export default function MovieDetailClient({ id, type, title, initialComments }: 
       showNotice("Iltimos, avval tizimga kiring")
       return
     }
+    const prevRated = rated
     setRated(val)
     try {
-      if (type === 'movie') await api.rateMovie(id, val)
-      else await api.rateSeries(id, val)
+      if (ratingId) {
+        if (type === 'movie') await api.updateMovieRating(ratingId, val)
+        else await api.updateSeriesRating(ratingId, val)
+      } else {
+        let res;
+        if (type === 'movie') res = await api.rateMovie(id, val)
+        else res = await api.rateSeries(id, val)
+        if (res && (res as any).id) setRatingId((res as any).id)
+      }
       showNotice(`${val} yulduz baho saqlandi`)
-    } catch {
+    } catch (err: any) {
+      setRated(prevRated)
       showNotice("Baho saqlanmadi")
     }
   }

@@ -45,7 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex min-h-screen flex-col lg:flex-row bg-[#070A0C]">
       {/* Sidebar for Desktop / Top Header for Mobile */}
-      <aside className="w-full lg:w-64 shrink-0 border-b lg:border-b-0 lg:border-r border-[rgba(0,255,163,0.12)] p-4 sm:p-6 lg:p-8 lg:min-h-full flex flex-col gap-6 bg-[#0B1013] z-10 sticky top-0 lg:h-screen overflow-y-auto">
+      <aside className="w-full lg:w-64 shrink-0 border-b lg:border-b-0 lg:border-r border-[rgba(0,255,163,0.12)] p-4 sm:p-6 lg:p-8 lg:min-h-full flex flex-col gap-6 bg-[#0B1013] z-10 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto">
         <div>
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1.5 rounded-lg border border-[rgba(0,255,163,0.3)] bg-[rgba(0,255,163,0.15)] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#00FFA3]">
@@ -65,7 +65,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </Link>
 
         {/* Navigation - vertical on desktop, horizontal on mobile */}
-        <nav className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 scroll-row">
+        <nav className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {ADMIN_LINKS.map((item) => {
             const active = isActive(item.href, item.exact)
             const Icon = item.icon

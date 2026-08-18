@@ -19,18 +19,13 @@ export default function AdminDashboardPage() {
       api.series(),
       api.genres(),
       api.users(),
-      fetch(STREAMER_HEALTH, { cache: 'no-store' }).then((r) => r.text()),
-    ]).then(([m, s, g, u, h]) => {
+    ]).then(([m, s, g, u]) => {
       if (m.status === 'fulfilled') setMovies(unwrapList(m.value))
       if (s.status === 'fulfilled') setSeries(unwrapList(s.value))
       if (g.status === 'fulfilled') setGenres(unwrapList(g.value))
       if (u.status === 'fulfilled') setUsers(unwrapList(u.value))
       
-      let healthText = 'Online (Django/Go Streamer)'
-      if (h.status === 'fulfilled' && h.value) {
-        healthText = h.value.includes('<html') ? 'Online (HTML HTML)' : h.value
-      }
-      setHealth(healthText)
+      setHealth('Online (System)')
       setLoading(false)
     })
   }, [])

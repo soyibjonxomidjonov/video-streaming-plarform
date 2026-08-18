@@ -72,7 +72,7 @@ export default function AdminGenresPage() {
         <button
           type="submit"
           disabled={saving || !name.trim()}
-          className="flex items-center gap-2 rounded-2xl bg-[#00FFA3] px-5 py-2.5 text-xs font-bold text-[#070A0C] shadow-[0_0_12px_rgba(0,255,163,0.3)] hover:bg-[#1AFFA8] disabled:opacity-50"
+          className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-[#00FFA3] px-5 py-2.5 text-xs font-bold text-[#070A0C] shadow-[0_0_12px_rgba(0,255,163,0.3)] hover:bg-[#1AFFA8] disabled:opacity-50"
         >
           {saving ? <Loader2 size={15} className="animate-spin" /> : <><Plus size={15} /> Qo&apos;shish</>}
         </button>

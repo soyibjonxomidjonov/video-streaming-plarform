@@ -7,6 +7,7 @@ import { api, mediaTitle, unwrapList, type MediaItem } from '@/lib/api'
 
 export default function AdminSeriesPage() {
   const [series, setSeries] = useState<MediaItem[]>([])
+  const [genres, setGenres] = useState<Genre[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -21,6 +22,7 @@ export default function AdminSeriesPage() {
   const [backdropUrl, setBackdropUrl] = useState('')
   const [posterFile, setPosterFile] = useState<File | null>(null)
   const [backdropFile, setBackdropFile] = useState<File | null>(null)
+  const [selectedGenres, setSelectedGenres] = useState<number[]>([])
 
   const showToast = (msg: string) => {
     setNotice(msg)
@@ -30,8 +32,9 @@ export default function AdminSeriesPage() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const data = await api.series()
-      setSeries(unwrapList(data))
+      const [sRes, gRes] = await Promise.allSettled([api.series(), api.genres()])
+      if (sRes.status === 'fulfilled') setSeries(unwrapList(sRes.value))
+      if (gRes.status === 'fulfilled') setGenres(unwrapList(gRes.value))
     } finally {
       setLoading(false)
     }
@@ -49,6 +52,7 @@ export default function AdminSeriesPage() {
     setBackdropUrl('')
     setPosterFile(null)
     setBackdropFile(null)
+    setSelectedGenres([])
     setShowModal(true)
   }
 
@@ -60,6 +64,11 @@ export default function AdminSeriesPage() {
     setBackdropUrl(item.backdrop_url || item.backdrop || '')
     setPosterFile(null)
     setBackdropFile(null)
+    if (item.genres) {
+      setSelectedGenres(item.genres.map((g: any) => typeof g === 'object' ? g.id : g))
+    } else {
+      setSelectedGenres([])
+    }
     setShowModal(true)
   }
 
@@ -70,15 +79,23 @@ export default function AdminSeriesPage() {
     try {
       let payload: Partial<MediaItem> | FormData
 
-      if (posterFile || backdropFile) {
+      if (posterFile || backdropFile || true) {
         const formData = new FormData()
         formData.append('title', title.trim())
         if (description.trim()) formData.append('description', description.trim())
-        if (posterFile) formData.append('poster', posterFile)
-        else if (posterUrl.trim()) formData.append('poster_url', posterUrl.trim())
-        if (backdropFile) formData.append('backdrop', backdropFile)
-        else if (backdropUrl.trim()) formData.append('backdrop_url', backdropUrl.trim())
-        payload = formData
+        if (posterFile) formData.append('poster_image', posterFile)
+        else if (posterUrl) formData.append('poster_url', posterUrl)
+
+        if (backdropFile) formData.append('backdrop_image', backdropFile)
+        else if (backdropUrl) formData.append('backdrop_url', backdropUrl)
+
+        selectedGenres.forEach(gId => formData.append('genres', gId.toString()))
+
+        if (editingItem) {
+          payload = formData
+        } else {
+          payload = formData
+        }
       } else {
         payload = {
           title: title.trim(),
@@ -133,10 +150,10 @@ export default function AdminSeriesPage() {
         </div>
 
         <button
-          onClick={openAddModal}
-          className="flex items-center gap-2 rounded-2xl bg-[#00FFA3] px-5 py-2.5 text-xs font-bold text-[#070A0C] shadow-[0_0_15px_rgba(0,255,163,0.3)] transition hover:bg-[#1AFFA8]"
+          onClick={() => { resetForm(); setShowModal(true) }}
+          className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-[#00FFA3] px-6 py-2.5 text-sm font-bold text-[#070A0C] shadow-[0_0_15px_rgba(0,255,163,0.3)] transition hover:bg-[#1AFFA8]"
         >
-          <Plus size={16} /> Yangi serial qo&apos;shish
+          <Plus size={18} /> Yangi serial qo&apos;shish
         </button>
       </div>
 
@@ -241,14 +258,45 @@ export default function AdminSeriesPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-bold text-[#F8FAFC]">Tavsif</label>
+                <label className="mb-2 block text-sm font-bold text-[#64748B]">Tavsif</label>
                 <textarea
-                  rows={3}
+                  rows={6}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Serial haqida qisqacha..."
-                  className="w-full rounded-xl border border-[rgba(0,255,163,0.2)] bg-[#0B1013] px-3.5 py-2.5 text-xs text-[#F8FAFC] outline-none focus:border-[#00FFA3]"
+                  placeholder="Serial haqida to'liq ma'lumot..."
+                  className="w-full rounded-2xl border border-[rgba(0,255,163,0.18)] bg-[#0F171A] px-4 py-3 text-sm text-[#F8FAFC] outline-none transition focus:border-[rgba(0,255,163,0.5)]"
                 />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-[#64748B]">Janrlar</label>
+                <div className="flex flex-wrap gap-2 rounded-2xl border border-[rgba(0,255,163,0.18)] bg-[#0F171A] p-4">
+                  {genres.length === 0 ? (
+                    <span className="text-xs text-[#64748B]">Janrlar topilmadi. Avval janr qo'shing.</span>
+                  ) : (
+                    genres.map((g) => {
+                      const isSelected = selectedGenres.includes(g.id)
+                      return (
+                        <button
+                          type="button"
+                          key={g.id}
+                          onClick={() => {
+                            setSelectedGenres(prev => 
+                              isSelected ? prev.filter(id => id !== g.id) : [...prev, g.id]
+                            )
+                          }}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                            isSelected 
+                              ? 'bg-[#00FFA3] text-[#070A0C]' 
+                              : 'bg-[#0B1013] text-[#64748B] hover:bg-[#141F24]'
+                          }`}
+                        >
+                          {g.name}
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

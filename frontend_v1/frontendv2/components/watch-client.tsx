@@ -61,23 +61,23 @@ const CommentsList = memo(function CommentsList({ comments }: { comments: Commen
     )
   }
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-4">
       {comments.map((c, i) => (
-        <div
-          key={c.id || i}
-          className="rounded-xl border border-[rgba(0,255,163,0.08)] bg-[#141F24]/80 p-3.5"
-        >
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-bold text-[#00FFA3]">
-              {typeof c.user === 'object'
-                ? c.user.first_name || c.user.email
-                : c.username || 'Foydalanuvchi'}
-            </span>
-            <span className="text-[#64748B]">
-              {c.created_at ? new Date(c.created_at).toLocaleDateString('uz-UZ') : 'Hozir'}
-            </span>
+        <div key={c.id || i} className="flex gap-4 rounded-2xl bg-[#0B1013] p-5 border border-white/5">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[rgba(0,255,163,0.15)] text-sm font-bold text-[#00FFA3] ring-1 ring-[#00FFA3]/30">
+            {typeof c.user === 'object' ? (c.user.first_name || c.user.email || 'U').charAt(0).toUpperCase() : (c.username || 'U').charAt(0).toUpperCase()}
           </div>
-          <p className="mt-1.5 text-sm text-[#F8FAFC] leading-relaxed">{c.text || c.content}</p>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-[#F8FAFC]">
+                {typeof c.user === 'object' ? (c.user.first_name || c.user.email) : (c.username || 'Foydalanuvchi')}
+              </span>
+              <span className="text-xs text-[#64748B]">
+                {c.created_at ? new Date(c.created_at).toLocaleDateString('uz-UZ') : 'Hozir'}
+              </span>
+            </div>
+            <p className="text-sm leading-relaxed text-[#94A3B8]">{c.text || c.content}</p>
+          </div>
         </div>
       ))}
     </div>
@@ -156,6 +156,8 @@ export default function WatchClient({
   const [favoriteId, setFavoriteId] = useState<number | null>(null)
   const [progressId, setProgressId] = useState<number | null>(null)
   const [rated, setRated] = useState(0)
+  const [ratingId, setRatingId] = useState<number | null>(null)
+  const [hoverRating, setHoverRating] = useState(0)
   const [commentText, setCommentText] = useState('')
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [notice, setNotice] = useState<string | null>(null)
@@ -169,29 +171,41 @@ export default function WatchClient({
     async function checkData() {
       try {
         if (type === 'movie') {
-          const [fav, prog] = await Promise.all([
-            api.checkFavoriteMovie(id),
-            api.checkProgressMovie(id)
+          const [fav, prog, rat] = await Promise.all([
+            api.checkFavoriteMovie(id, user?.id),
+            api.checkProgressMovie(id),
+            api.movieRating(id)
           ])
           if (!active) return
           setFavorite(!!fav)
           setFavoriteId(fav?.id ?? null)
           setProgressId(prog?.id ?? null)
+          const myRating = rat.results.find((r: any) => r.user === user?.id)
+          if (myRating) {
+            setRated(myRating.stars)
+            setRatingId(myRating.id)
+          }
         } else if (activeEpisode?.id) {
-          const [fav, prog] = await Promise.all([
-            api.checkFavoriteSeries(id),
-            api.checkProgressSeries(activeEpisode.id)
+          const [fav, prog, rat] = await Promise.all([
+            api.checkFavoriteSeries(id, user?.id),
+            api.checkProgressSeries(activeEpisode.id),
+            api.seriesRating(id)
           ])
           if (!active) return
           setFavorite(!!fav)
           setFavoriteId(fav?.id ?? null)
           setProgressId(prog?.id ?? null)
+          const myRating = rat.results.find((r: any) => r.user === user?.id)
+          if (myRating) {
+            setRated(myRating.stars)
+            setRatingId(myRating.id)
+          }
         }
       } catch {}
     }
     void checkData()
     return () => { active = false }
-  }, [isAuthenticated, type, id, activeEpisode?.id])
+  }, [isAuthenticated, type, id, activeEpisode?.id, user?.id])
 
   const showToast = useCallback((msg: string) => {
     setNotice(msg)
@@ -300,15 +314,24 @@ export default function WatchClient({
   /* ── Rating ── */
   const handleRate = useCallback(async (stars: number) => {
     if (!isAuthenticated) { showToast('Iltimos, avval tizimga kiring'); return }
+    const prevRated = rated
     setRated(stars)
     try {
-      if (type === 'movie') await api.rateMovie(id, stars)
-      else await api.rateSeries(id, stars)
+      if (ratingId) {
+        if (type === 'movie') await api.updateMovieRating(ratingId, stars)
+        else await api.updateSeriesRating(ratingId, stars)
+      } else {
+        let res;
+        if (type === 'movie') res = await api.rateMovie(id, stars)
+        else res = await api.rateSeries(id, stars)
+        if (res && (res as any).id) setRatingId((res as any).id)
+      }
       showToast(`${stars} yulduz baho saqlandi`)
     } catch {
+      setRated(prevRated)
       showToast('Baho saqlanmadi')
     }
-  }, [isAuthenticated, type, id, showToast])
+  }, [isAuthenticated, type, id, showToast, rated, ratingId])
 
   /* ── Comment Submit ── */
   const handleAddComment = useCallback(async (e?: FormEvent) => {
@@ -476,42 +499,49 @@ export default function WatchClient({
           </div>
 
           {/* Quick Actions */}
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-4 rounded-2xl border border-[rgba(0,255,163,0.15)] bg-[#0F171A] p-4 sm:p-5 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
             <button
               onClick={toggleFavorite}
-              aria-label={favorite ? 'Sevimlilardan olib tashlash' : 'Sevimlilarga qo\'shish'}
-              aria-pressed={favorite}
-              className={`flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-xs font-semibold transition min-h-[44px] focus-visible:outline-2 focus-visible:outline-[#00FFA3] focus-visible:outline-offset-1 ${
+              aria-label={favorite ? "Sevimlilardan olib tashlash" : "Sevimlilarga qo'shish"}
+              className={`flex items-center gap-2.5 rounded-xl border px-5 py-3 text-sm font-bold transition-all focus-visible:outline-2 focus-visible:outline-[#00FFA3] active:scale-95 ${
                 favorite
-                  ? 'border-[#00FFA3] bg-[rgba(0,255,163,0.15)] text-[#00FFA3]'
-                  : 'border-[rgba(0,255,163,0.18)] bg-[#141F24] text-[#94A3B8] hover:border-[rgba(0,255,163,0.4)] hover:text-[#F8FAFC]'
+                  ? 'border-[#00FFA3] bg-[rgba(0,255,163,0.15)] text-[#00FFA3] shadow-[0_0_15px_rgba(0,255,163,0.2)]'
+                  : 'border-[rgba(0,255,163,0.2)] bg-[#0B1013] text-[#64748B] hover:border-[#00FFA3] hover:text-[#F8FAFC]'
               }`}
             >
-              <Bookmark size={15} aria-hidden="true" className={favorite ? 'fill-current' : ''} />
-              <span className="hidden sm:inline">{favorite ? 'Saqlangan' : '+ Sevimlilarga'}</span>
+              <Bookmark size={18} className={favorite ? 'fill-current text-[#00FFA3]' : ''} aria-hidden="true" />
+              <span>{favorite ? 'Saqlangan' : 'Sevimlilarga qo\'shish'}</span>
             </button>
 
             {/* Star Rating */}
-            <div
-              className="flex items-center gap-1 rounded-xl border border-[rgba(0,255,163,0.12)] bg-[#141F24] px-3 py-2.5 min-h-[44px]"
-              role="group"
-              aria-label="Baholash"
-            >
-              {[1, 2, 3, 4, 5].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => handleRate(s)}
-                  aria-label={`${s} yulduz baho berish`}
-                  aria-pressed={rated === s}
-                  className="text-[#64748B] transition hover:scale-125 hover:text-[#F59E0B] p-0.5 focus-visible:outline-2 focus-visible:outline-[#F59E0B] focus-visible:rounded-sm"
-                >
-                  <Star
-                    size={14}
-                    aria-hidden="true"
-                    className={rated >= s || (rating && Number(rating) >= s) ? 'fill-[#F59E0B] text-[#F59E0B]' : ''}
-                  />
-                </button>
-              ))}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#64748B]">Baholash:</span>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((val) => (
+                  <button
+                    key={val}
+                    onClick={() => handleRate(val)}
+                    onMouseEnter={() => setHoverRating(val)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="transition hover:scale-125"
+                    title={`${val} yulduz`}
+                  >
+                    <Star
+                      size={18}
+                      className={
+                        val <= (hoverRating || rated || (rating ? Number(rating) : 0))
+                          ? 'fill-[#ffb703] text-[#ffb703]'
+                          : 'text-[#64748B]/40'
+                      }
+                    />
+                  </button>
+                ))}
+              </div>
+              {(rated > 0 || (rating && Number(rating) > 0)) && (
+                <span className="text-xs font-bold text-[#ffb703]">
+                  ({rated > 0 ? rated : Number(rating)}/5)
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -547,20 +577,22 @@ export default function WatchClient({
           {/* Comment Form */}
           <form
             onSubmit={handleAddComment}
-            className="flex flex-col gap-2.5 sm:flex-row"
+            className="flex flex-col gap-3 sm:flex-row mb-6"
           >
             <input
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              placeholder="Fikringizni qoldiring..."
-              className="flex-1 min-w-0 rounded-xl border border-[rgba(0,255,163,0.15)] bg-[#141F24] px-4 py-3 text-sm text-[#F8FAFC] outline-none transition focus:border-[#00FFA3] focus:shadow-[0_0_10px_rgba(0,255,163,0.12)] placeholder:text-[#64748B]"
+              placeholder={isAuthenticated ? "Fikringizni qoldiring..." : "Izoh qoldirish uchun tizimga kiring"}
+              disabled={!isAuthenticated}
+              className="w-full rounded-2xl border border-[rgba(0,255,163,0.15)] bg-[#0B1013] px-5 py-4 text-sm text-[#F8FAFC] placeholder:text-[#64748B] outline-none focus:border-[#00FFA3] focus:ring-1 focus:ring-[#00FFA3] disabled:opacity-50 transition-all"
             />
             <button
               type="submit"
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-[#00FFA3] px-5 py-3 text-xs font-bold text-[#070A0C] shadow-[0_0_12px_rgba(0,255,163,0.25)] transition hover:bg-[#1AFFA8] active:scale-95 min-h-[44px] shrink-0"
+              disabled={!isAuthenticated || !commentText.trim()}
+              className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-[#00FFA3] px-8 text-sm font-bold text-[#070A0C] shadow-[0_0_15px_rgba(0,255,163,0.3)] transition hover:bg-[#1AFFA8] active:scale-95 disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-[#00FFA3]"
             >
-              <Send size={13} />
+              <Send size={16} aria-hidden="true" />
               Yuborish
             </button>
           </form>

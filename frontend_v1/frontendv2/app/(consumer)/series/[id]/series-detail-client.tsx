@@ -1,6 +1,6 @@
 'use client'
 
-import React, { type FormEvent, useState } from 'react'
+import React, { type FormEvent, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Bookmark, MessageSquare, Play, Send, Star } from 'lucide-react'
 import { api, type Comment, type Episode } from '@/lib/api'
@@ -16,11 +16,28 @@ type Props = {
 export default function SeriesDetailClient({ id, title, episodes = [], initialComments = [] }: Props) {
   const { isAuthenticated, user } = useAuth()
   const [favorite, setFavorite] = useState(false)
+  const [favoriteId, setFavoriteId] = useState<number | null>(null)
   const [rated, setRated] = useState(0)
+  const [ratingId, setRatingId] = useState<number | null>(null)
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [comment, setComment] = useState('')
   const [notice, setNotice] = useState<string | null>(null)
   const [hoverRating, setHoverRating] = useState(0)
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      api.checkFavoriteSeries(id, user.id).then(res => {
+        if (res) { setFavorite(true); setFavoriteId(res.id) }
+      }).catch(() => {})
+      api.seriesRating(id).then(res => {
+        const myRating = res.results.find((r: any) => r.user === user.id)
+        if (myRating) {
+          setRated(myRating.stars)
+          setRatingId(myRating.id)
+        }
+      }).catch(() => {})
+    }
+  }, [isAuthenticated, user, id])
 
   const showNotice = (msg: string) => {
     setNotice(msg)
@@ -32,17 +49,21 @@ export default function SeriesDetailClient({ id, title, episodes = [], initialCo
       showNotice("Iltimos, avval tizimga kiring")
       return
     }
+    const prev = favorite
+    setFavorite(!prev)
     try {
-      if (favorite) {
-        await api.removeFavoriteSeries(id)
-        setFavorite(false)
-        showNotice("Sevimlilardan olib tashlandi")
-      } else {
-        await api.addFavoriteSeries(id)
-        setFavorite(true)
+      if (!prev) {
+        const res = await api.addFavoriteSeries(id)
+        if (res && (res as any).id) setFavoriteId((res as any).id)
         showNotice("Sevimlilarga qo'shildi ⭐")
+      } else {
+        if (favoriteId) await api.removeFavoriteSeries(favoriteId)
+        else await api.removeFavoriteSeries(id)
+        showNotice("Sevimlilardan olib tashlandi")
+        setFavoriteId(null)
       }
     } catch {
+      setFavorite(prev)
       showNotice("Sevimlilarni saqlashda xatolik")
     }
   }
@@ -52,11 +73,18 @@ export default function SeriesDetailClient({ id, title, episodes = [], initialCo
       showNotice("Iltimos, avval tizimga kiring")
       return
     }
+    const prevRated = rated
     setRated(val)
     try {
-      await api.rateSeries(id, val)
+      if (ratingId) {
+        await api.updateSeriesRating(ratingId, val)
+      } else {
+        const res = await api.rateSeries(id, val)
+        if (res && (res as any).id) setRatingId((res as any).id)
+      }
       showNotice(`${val} yulduz baho saqlandi`)
-    } catch {
+    } catch (err: any) {
+      setRated(prevRated)
       showNotice("Baho saqlanmadi")
     }
   }
