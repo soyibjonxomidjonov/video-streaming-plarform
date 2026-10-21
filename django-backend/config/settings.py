@@ -269,7 +269,7 @@ CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND") #Redis yoki bosh
 
 
 # GO_STREAMER_BASE_URL = os.environ.get("GO_STREAMER_BASE_URL", "http://go-streamer:8081")
-GO_STREAMER_BASE_URL = os.environ.get("GO_STREAMER_BASE_URL")
+GO_STREAMER_BASE_URL = os.environ.get("GO_STREAMER_BASE_URL", "https://go.scholarmap.uz")
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
@@ -278,12 +278,14 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     "https://backend.scholarmap.uz",
     "https://alvion.scholarmap.uz",
+    "https://go.scholarmap.uz",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "https://backend.scholarmap.uz",
     "https://alvion.scholarmap.uz",
+    "https://go.scholarmap.uz",
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
