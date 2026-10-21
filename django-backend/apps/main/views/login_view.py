@@ -36,7 +36,7 @@ def send_email_task(subject, message, email, fail_silently, verification_code):
     send_mail(
         subject=subject,
         message=f"{message}: {verification_code}",
-        from_email="soyibjonlaptop@gmail.com",
+        from_email=None,
         recipient_list=[email],
         fail_silently=fail_silently,
         html_message = html_message,
