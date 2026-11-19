@@ -38,13 +38,12 @@ class AIConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data=None, bytes_data=None):
         try:
             data = json.loads(text_data)
-            print("KELGAN DATA:", data)
         except (TypeError, json.JSONDecodeError):
             await self.send_error("INVALID_JSON", "Xabar formati noto'g'ri")
             return
 
 
-        text = data.get("text")
+        text = data.get("message") or data.get("text")
         if not text:
             await self.send_error("EMPTY_TEXT", "Matn bo'sh bo'lishi mumkin emas")
             return
